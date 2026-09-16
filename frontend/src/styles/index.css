@@ -1,0 +1,932 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17201f;
+  background: #f5f7f6;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* =========================
+   MENU LATERAL
+========================= */
+
+aside {
+  width: 245px;
+  background: #12201f;
+  color: #dfe9e7;
+  padding: 25px 16px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+}
+
+.brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  margin: 2px 9px 34px;
+}
+
+.brand > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #d9f2e7;
+  color: #173c32;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.brand strong {
+  display: block;
+  font-size: 17px;
+}
+
+.brand small {
+  color: #8ea29d;
+  font-size: 11px;
+}
+
+nav {
+  display: grid;
+  gap: 6px;
+}
+
+nav button {
+  border: 0;
+  background: transparent;
+  color: #9fb1ad;
+  padding: 12px 13px;
+  border-radius: 10px;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  text-align: left;
+}
+
+nav button:hover,
+nav button.active {
+  background: #213532;
+  color: #fff;
+}
+
+.side-note {
+  margin-top: auto;
+  border-top: 1px solid #2b3b38;
+  padding: 17px 9px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.side-note span {
+  color: #8ea29d;
+}
+
+/* =========================
+   CONTEÚDO PRINCIPAL
+========================= */
+
+main {
+  margin-left: 245px;
+  width: calc(100% - 245px);
+  padding: 30px 42px 50px;
+  max-width: 1500px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.section-kicker,
+.mini-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: #70817d;
+  margin: 0 0 5px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dcece6;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #234a40;
+}
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+  background: #173f37;
+  border-radius: 18px;
+  color: white;
+  padding: 28px 31px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.hero h2 {
+  font-size: 24px;
+  margin: 9px 0 7px;
+}
+
+.hero p {
+  margin: 0;
+  color: #bdd2cc;
+}
+
+.pill {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #9bd7c4;
+  font-weight: 800;
+}
+
+.hero-mark {
+  font-size: 80px;
+  opacity: 0.14;
+}
+
+/* =========================
+   CARDS / ESTATÍSTICAS
+========================= */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.stat,
+.card {
+  background: white;
+  border: 1px solid #e1e8e5;
+  border-radius: 15px;
+  box-shadow: 0 3px 16px #1a30290a;
+}
+
+.stat {
+  padding: 19px;
+}
+
+.stat span,
+.stat small {
+  display: block;
+  color: #73817e;
+  font-size: 12px;
+}
+
+.stat b {
+  font-size: 29px;
+  display: block;
+  margin: 6px 0;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+}
+
+.card {
+  padding: 22px;
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+}
+
+.card h3 {
+  margin: 3px 0 18px;
+  font-size: 17px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 30px;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+  font-size: 13px;
+}
+
+.bar-row > div {
+  height: 8px;
+  background: #edf2f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bar-row i {
+  display: block;
+  height: 100%;
+  background: #3d8a76;
+  border-radius: 8px;
+}
+
+.bar-row b {
+  text-align: right;
+}
+
+.list-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf1ef;
+  font-size: 13px;
+}
+
+.list-row:last-child {
+  border: 0;
+}
+
+.muted {
+  color: #71807c;
+  font-size: 13px;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.search {
+  background: white;
+  border: 1px solid #dce5e1;
+  border-radius: 10px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  width: 320px;
+}
+
+.search input {
+  border: 0;
+  outline: 0;
+  padding: 11px;
+  width: 100%;
+}
+
+.primary {
+  border: 0;
+  background: #1d5a4d;
+  color: white;
+  padding: 11px 15px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.primary:hover {
+  background: #16483e;
+}
+
+/* =========================
+   TABELAS
+========================= */
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+th {
+  text-align: left;
+  color: #71807c;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #fafcfb;
+}
+
+th,
+td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #edf1ef;
+}
+
+td strong {
+  font-size: 13px;
+}
+
+.belt {
+  display: inline-block;
+  background: #eef5f2;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+/* =========================
+   BOTÕES DE AÇÃO
+========================= */
+
+.link-btn {
+  border: 0;
+  background: none;
+  color: #2d7765;
+  font-weight: 700;
+  font-size: 12px;
+  margin-right: 12px;
+  padding: 3px;
+}
+
+.link-btn.danger {
+  color: #b34e4e;
+}
+
+/* =========================
+   FORMULÁRIOS
+========================= */
+
+.form {
+  display: grid;
+  gap: 13px;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #44534f;
+}
+
+.form input,
+.form select,
+.form textarea,
+.add-item input,
+.add-cat input,
+#date {
+  border: 1px solid #d8e1de;
+  border-radius: 8px;
+  padding: 10px;
+  outline: none;
+  background: white;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus,
+.add-item input:focus,
+.add-cat input:focus,
+#date:focus {
+  border-color: #3f8a78;
+  box-shadow: 0 0 0 3px #3f8a7820;
+}
+
+.form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.full {
+  width: 100%;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0c181680;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 5;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: min(520px, 100%);
+  padding: 22px;
+  box-shadow: 0 20px 60px #0003;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.modal-head h2 {
+  font-size: 19px;
+  margin: 0;
+}
+
+.icon-btn {
+  border: 0;
+  background: #f0f3f2;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+}
+
+.mini-label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.summary {
+  font-weight: 700;
+  color: #2d7765;
+}
+
+/* =========================
+   FREQUÊNCIA
+========================= */
+
+.attendance-btn {
+  border: 1px solid #d8e3df;
+  background: white;
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.attendance-btn.present {
+  background: #e5f4ed;
+  color: #21694f;
+  border-color: #b9ddce;
+}
+
+.attendance-btn.absent {
+  color: #71807c;
+}
+
+/* =========================
+   CURRÍCULO
+========================= */
+
+.belt-tabs {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 17px;
+}
+
+.belt-tabs button {
+  border: 1px solid #dce5e1;
+  background: white;
+  color: #52615d;
+  padding: 8px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.belt-tabs button.selected,
+.belt-tabs button.active {
+  background: #173f37;
+  color: #fff;
+  border-color: #173f37;
+}
+
+.curriculo-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 17px;
+}
+
+.add-cat {
+  display: flex;
+  gap: 7px;
+}
+
+.add-cat input {
+  width: 190px;
+}
+
+.curriculum {
+  margin-bottom: 15px;
+}
+
+/* =========================
+   CATEGORIA DO CURRÍCULO
+========================= */
+
+.curriculum-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.curriculum-head h3 {
+  margin: 2px 0 4px;
+}
+
+.curriculum-head p {
+  font-size: 12px;
+  color: #7a8783;
+}
+
+/*
+  Compatibilidade com o Curriculo.jsx atual:
+  .curriculo-card-header
+  .actions
+*/
+
+.curriculo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.curriculo-card-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.curriculo-card-header h3 {
+  margin: 2px 0 4px;
+}
+
+.curriculo-card-header p {
+  font-size: 12px;
+  color: #7a8783;
+  margin-bottom: 0;
+}
+
+/* Botões da categoria ficam na direita */
+
+.curriculo-card-header .actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* =========================
+   TÉCNICAS
+========================= */
+
+.tecnicas {
+  width: 100%;
+}
+
+/*
+  ESSA É A CORREÇÃO PRINCIPAL.
+
+  O JSX usa .tecnica.
+  Portanto, não usamos somente .technique.
+*/
+
+.tecnica {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 11px;
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 8px;
+  border-bottom: 1px solid #eef2f0;
+  font-size: 13px;
+}
+
+.tecnica:last-child {
+  border-bottom: 0;
+}
+
+.tecnica-nome {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tecnica-nome > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.numero {
+  flex-shrink: 0;
+  color: #71807c;
+  min-width: 22px;
+}
+
+/*
+  Botões Editar / Excluir da técnica:
+  ficam sempre no lado direito da mesma linha.
+*/
+
+.tecnica-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.tecnica-actions .link-btn {
+  margin-right: 0;
+}
+
+/* =========================
+   BOTÕES DE EDIÇÃO
+========================= */
+
+.edit-button {
+  border: 0;
+  background: transparent;
+  color: #2d7765;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.edit-button:hover {
+  background: #eef5f2;
+}
+
+.delete-button {
+  border: 0;
+  background: transparent;
+  color: #b34e4e;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.delete-button:hover {
+  background: #fff0f0;
+}
+
+/* =========================
+   RODAPÉ DA CATEGORIA
+========================= */
+
+.categoria-footer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.add-item {
+  display: flex;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.add-item input {
+  flex: 1;
+}
+
+.add-item button {
+  border: 1px solid #d6e2de;
+  background: #f4f8f6;
+  border-radius: 8px;
+  padding: 8px 11px;
+  color: #2d6d5d;
+  font-weight: 700;
+}
+
+.add-button {
+  border: 1px solid #d6e2de;
+  background: #f4f8f6;
+  border-radius: 8px;
+  padding: 8px 11px;
+  color: #2d6d5d;
+  font-weight: 700;
+}
+
+.add-button:hover {
+  background: #eaf3ef;
+}
+
+/* =========================
+   ESTADOS VAZIOS
+========================= */
+
+.empty {
+  text-align: center;
+  padding: 35px 15px;
+  color: #7b8885;
+  font-size: 13px;
+}
+
+.empty.small {
+  padding: 18px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 25px;
+}
+
+.empty-icon {
+  margin: auto auto 10px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #edf5f2;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: #3c806f;
+}
+
+.full-card {
+  grid-column: 1 / -1;
+}
+
+/* =========================
+   RESPONSIVO
+========================= */
+
+@media (max-width: 900px) {
+  aside {
+    width: 70px;
+    padding: 20px 10px;
+  }
+
+  .brand div,
+  .side-note,
+  nav button:not(.active)::after {
+    display: none;
+  }
+
+  .brand {
+    margin: 0 6px 30px;
+  }
+
+  .brand > span {
+    width: 38px;
+  }
+
+  nav button {
+    justify-content: center;
+  }
+
+  .app main {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+    padding: 24px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .curriculo-head,
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  main {
+    padding: 18px !important;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 22px;
+  }
+
+  .hero-mark {
+    display: none;
+  }
+
+  table {
+    min-width: 650px;
+  }
+
+  .table-card {
+    overflow: auto;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+    No celular, os botões continuam na mesma linha,
+    mas ficam um pouco menores.
+  */
+
+  .tecnica {
+    gap: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .tecnica-actions {
+    gap: 1px;
+  }
+
+  .edit-button,
+  .delete-button {
+    padding: 5px 4px;
+    font-size: 11px;
+  }
+
+  .curriculo-card-header {
+    gap: 8px;
+  }
+
+  .curriculo-card-header .actions {
+    gap: 1px;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "hajimetech-api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {"dev":"node --watch src/server.js","start":"node src/server.js","test":"jest --runInBand"},
+  "dependencies": {"cors":"^2.8.5","dotenv":"^16.4.7","express":"^4.21.2","pg":"^8.13.1","uuid":"^11.0.5"},
+  "devDependencies": {"jest":"^29.7.0","supertest":"^7.0.0"},
+  "jest": {"testEnvironment":"node","transform":{}}
+}
