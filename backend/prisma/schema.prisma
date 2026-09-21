@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Academia {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                 String                @db.VarChar(150)
+  criadaEm             DateTime              @default(now()) @map("criada_em") @db.Timestamptz(6)
+  usuarios             Usuario[]
+  turmas               Turma[]
+  alunos               Aluno[]
+  frequencias          Frequencia[]
+  graduacoes           Graduacao[]
+  acompanhamentos      AcompanhamentoTecnico[]
+  curriculoCategorias  CurriculoCategoria[]
+
+  @@map("academias")
+}
+
+model Usuario {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId  String               @map("academia_id") @db.Uuid
+  nome        String               @db.VarChar(150)
+  email       String               @db.VarChar(180)
+  papel       String               @db.VarChar(30)
+  criadoEm    DateTime             @default(now()) @map("criado_em") @db.Timestamptz(6)
+  academia    Academia             @relation(fields: [academiaId], references: [id])
+  categorias  CurriculoCategoria[]
+
+  @@map("usuarios")
+}
+
+model Turma {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId    String        @map("academia_id") @db.Uuid
+  nome          String        @db.VarChar(100)
+  horario       String        @db.VarChar(80)
+  faixaEtaria   String?       @map("faixa_etaria") @db.VarChar(80)
+  criadoEm      DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  academia      Academia      @relation(fields: [academiaId], references: [id])
+  alunos        Aluno[]
+  frequencias   Frequencia[]
+
+  @@map("turmas")
+}
+
+model Aluno {
+  id                String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId        String                 @map("academia_id") @db.Uuid
+  turmaId           String?                @map("turma_id") @db.Uuid
+  nome              String                 @db.VarChar(150)
+  dataNascimento    DateTime?              @map("data_nascimento") @db.Date
+  faixaAtual        String                 @default("Branca") @map("faixa_atual") @db.VarChar(40)
+  telefone          String?                @db.VarChar(30)
+  observacoes       String?
+  ativo             Boolean                @default(true)
+  criadoEm         DateTime               @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm      DateTime               @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+  academia          Academia               @relation(fields: [academiaId], references: [id])
+  turma             Turma?                 @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  frequencias       Frequencia[]
+  graduacoes        Graduacao[]
+  acompanhamentos   AcompanhamentoTecnico[]
+
+  @@map("alunos")
+}
+
+model Frequencia {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId  String   @map("academia_id") @db.Uuid
+  alunoId     String   @map("aluno_id") @db.Uuid
+  turmaId     String?  @map("turma_id") @db.Uuid
+  data        DateTime @db.Date
+  presente    Boolean  @default(true)
+  academia    Academia @relation(fields: [academiaId], references: [id])
+  aluno       Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  turma       Turma?   @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+
+  @@unique([alunoId, data])
+  @@map("frequencias")
+}
+
+model Graduacao {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId     String   @map("academia_id") @db.Uuid
+  alunoId        String   @map("aluno_id") @db.Uuid
+  faixaAnterior  String?  @map("faixa_anterior") @db.VarChar(40)
+  novaFaixa      String   @map("nova_faixa") @db.VarChar(40)
+  dataGraduacao  DateTime @map("data_graduacao") @db.Date
+  observacoes    String?
+  criadoEm       DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  academia       Academia @relation(fields: [academiaId], references: [id])
+  aluno          Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@map("graduacoes")
+}
+
+model AcompanhamentoTecnico {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId   String   @map("academia_id") @db.Uuid
+  alunoId      String   @map("aluno_id") @db.Uuid
+  tecnica      String   @db.VarChar(150)
+  nivel        String   @db.VarChar(30)
+  observacao   String?
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+  academia     Academia @relation(fields: [academiaId], references: [id])
+  aluno        Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@map("acompanhamento_tecnico")
+}
+
+model CurriculoCategoria {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  academiaId   String           @map("academia_id") @db.Uuid
+  faixa        String           @db.VarChar(40)
+  kyuDan       String?          @map("kyu_dan") @db.VarChar(30)
+  nome         String           @db.VarChar(150)
+  descricao    String?
+  ordem        Int              @default(0)
+  criadoPor    String?          @map("criado_por") @db.Uuid
+  atualizadoEm DateTime         @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+  academia     Academia         @relation(fields: [academiaId], references: [id])
+  usuario      Usuario?         @relation(fields: [criadoPor], references: [id])
+  itens        CurriculoItem[]
+
+  @@index([academiaId, faixa, ordem], map: "idx_curriculo_cat_academia_faixa")
+  @@map("curriculo_categorias")
+}
+
+model CurriculoItem {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoriaId  String             @map("categoria_id") @db.Uuid
+  nome         String             @db.VarChar(150)
+  ordem        Int                @default(0)
+  ativo        Boolean            @default(true)
+  criadoEm     DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime           @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+  categoria    CurriculoCategoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@index([categoriaId, ordem], map: "idx_curriculo_item_categoria")
+  @@map("curriculo_itens")
+}

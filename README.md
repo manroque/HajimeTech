@@ -92,7 +92,33 @@ Para alterar as portas ou credenciais localmente, defina variáveis antes de ini
 POSTGRES_PASSWORD=uma-senha API_PORT=3001 docker compose up --build
 ```
 
-As tabelas e dados iniciais são criados automaticamente apenas quando o volume do PostgreSQL é criado pela primeira vez. Para recriar o banco do zero:
+As migrations do Prisma são executadas automaticamente antes da API iniciar através de `npm run db:migrate`. Esse comando usa `prisma migrate deploy`: ele aplica migrations já criadas, mas não cria novas migrations.
+
+
+
+Para recriar o banco do zero:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+Para criar uma nova migration durante o desenvolvimento, altere `backend/prisma/schema.prisma` e execute dentro de `backend`:
+
+```bash
+npm run db:migrate:dev -- --name nome_da_migration
+npm run db:migrate:status
+```
+
+O primeiro comando cria e aplica a migration no banco de desenvolvimento. O segundo mostra quais migrations estão aplicadas ou pendentes. Commit a pasta gerada em `backend/prisma/migrations` junto com a alteração do schema.
+
+Para aplicar manualmente migrations já criadas:
+
+```bash
+npm run db:migrate
+```
+
+No Docker, esse mesmo comando é executado durante o `docker compose up --build`, antes de `npm start`. Para um banco novo, a migration inicial será aplicada normalmente. Para recriar o banco local e executar todo o histórico novamente:
 
 ```bash
 docker compose down -v
