@@ -74,6 +74,33 @@ Administradores e professores podem editar o currículo.
 - Git
 - GitHub
 
+## Docker (backend e banco)
+
+O backend e o PostgreSQL podem ser iniciados juntos com Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Depois, a API estará disponível em `http://localhost:3000`. O PostgreSQL ficará disponível em `localhost:5432` com banco `hajimetech`, usuário `postgres` e senha `postgres` por padrão.
+
+O arquivo [client.http](client.http) contém exemplos para todas as rotas da API e pode ser executado pela extensão REST Client do VS Code. As requisições usam o tenant de demonstração e o papel `admin` definidos no arquivo de migração.
+
+Para alterar as portas ou credenciais localmente, defina variáveis antes de iniciar:
+
+```bash
+POSTGRES_PASSWORD=uma-senha API_PORT=3001 docker compose up --build
+```
+
+As tabelas e dados iniciais são criados automaticamente apenas quando o volume do PostgreSQL é criado pela primeira vez. Para recriar o banco do zero:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+Para executar o backend localmente sem Docker, use `backend/.env` baseado em `backend/.env.example` e os comandos `npm install` e `npm start` dentro da pasta `backend`.
+
 ### Deploy
 
 - Render

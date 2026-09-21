@@ -1,0 +1,197 @@
+@baseUrl = http://localhost:3000/api
+@academiaId = 00000000-0000-0000-0000-000000000001
+@turmaId = 00000000-0000-0000-0000-000000000201
+@alunoId = 00000000-0000-0000-0000-000000000301
+@categoriaId = 00000000-0000-0000-0000-000000000401
+@itemId = 00000000-0000-0000-0000-000000000501
+@writeRole = admin
+
+### Health
+GET {{baseUrl}}/health
+
+### Dashboard
+GET {{baseUrl}}/dashboard
+x-academia-id: {{academiaId}}
+
+### Alunos
+GET {{baseUrl}}/alunos
+x-academia-id: {{academiaId}}
+
+### Create aluno
+POST {{baseUrl}}/alunos
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "nome": "Judo Ka",
+  "data_nascimento": "2012-05-10",
+  "faixa_atual": "Branca",
+  "telefone": "5511999999999",
+  "observacoes": "Aluno de exemplo",
+  "turma_id": "{{turmaId}}"
+}
+
+### Update aluno
+PUT {{baseUrl}}/alunos/{{alunoId}}
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "nome": "Judo Ka Atualizado",
+  "data_nascimento": "2012-05-10",
+  "faixa_atual": "Branca",
+  "telefone": "5511988888888",
+  "observacoes": "Cadastro atualizado",
+  "turma_id": "{{turmaId}}"
+}
+
+### Deactivate aluno
+DELETE {{baseUrl}}/alunos/{{alunoId}}
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+### Turmas
+GET {{baseUrl}}/turmas
+x-academia-id: {{academiaId}}
+
+### Create turma
+POST {{baseUrl}}/turmas
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "nome": "Iniciantes",
+  "horario": "Sábado - 10:00",
+  "faixa_etaria": "6 a 12 anos"
+}
+
+### Frequencias for a date
+GET {{baseUrl}}/frequencias?data=2026-09-21
+x-academia-id: {{academiaId}}
+
+### Register frequencia
+POST {{baseUrl}}/frequencias
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "aluno_id": "{{alunoId}}",
+  "turma_id": "{{turmaId}}",
+  "data": "2026-09-21",
+  "presente": true
+}
+
+### Graduacoes
+GET {{baseUrl}}/graduacoes
+x-academia-id: {{academiaId}}
+
+### Create graduacao
+POST {{baseUrl}}/graduacoes
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "aluno_id": "{{alunoId}}",
+  "faixa_anterior": "Branca",
+  "nova_faixa": "Azul",
+  "data_graduacao": "2026-09-21",
+  "observacoes": "Avaliação de exemplo"
+}
+
+### Tecnico for an aluno
+GET {{baseUrl}}/tecnico/aluno/{{alunoId}}
+x-academia-id: {{academiaId}}
+
+### Create acompanhamento tecnico
+POST {{baseUrl}}/tecnico
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "aluno_id": "{{alunoId}}",
+  "tecnica": "O-soto-gari",
+  "nivel": "Em evolução",
+  "observacao": "Revisar entrada e desequilíbrio"
+}
+
+### Curriculo for a faixa
+GET {{baseUrl}}/curriculo?faixa=Azul
+x-academia-id: {{academiaId}}
+
+### Create curriculo categoria
+POST {{baseUrl}}/curriculo/categorias
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "faixa": "Azul",
+  "kyu_dan": "6º Kyu",
+  "nome": "Imobilizacoes",
+  "descricao": "Tecnicas de controle no solo"
+}
+
+### Update curriculo categoria
+PUT {{baseUrl}}/curriculo/categorias/{{categoriaId}}
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "nome": "Imobilizacoes atualizadas",
+  "descricao": "Descricao atualizada",
+  "ordem": 2
+}
+
+### Delete curriculo categoria
+DELETE {{baseUrl}}/curriculo/categorias/{{categoriaId}}
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+### Create curriculo item
+POST {{baseUrl}}/curriculo/itens
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "categoria_id": "{{categoriaId}}",
+  "nome": "O-soto-gari"
+}
+
+### Update curriculo item
+PUT {{baseUrl}}/curriculo/itens/{{itemId}}
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "nome": "O-soto-gari atualizado",
+  "ordem": 1
+}
+
+### Reorder curriculo items
+PATCH {{baseUrl}}/curriculo/itens/reordenar
+Content-Type: application/json
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
+
+{
+  "itens": [
+    {
+      "id": "{{itemId}}",
+      "ordem": 0
+    }
+  ]
+}
+
+### Deactivate curriculo item
+DELETE {{baseUrl}}/curriculo/itens/{{itemId}}
+x-academia-id: {{academiaId}}
+x-user-role: {{writeRole}}
