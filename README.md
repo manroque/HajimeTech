@@ -103,7 +103,7 @@ docker compose down -v
 docker compose up --build
 ```
 
-Para criar uma nova migration durante o desenvolvimento, altere `backend/prisma/schema.prisma` e execute dentro de `backend`:
+Para criar uma nova migration durante o desenvolvimento, realize as modificações em backend/prisma/schema.prisma` e execute dentro de `backend`:
 
 ```bash
 npm run db:migrate:dev -- --name nome_da_migration
