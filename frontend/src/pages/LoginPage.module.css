@@ -1,0 +1,165 @@
+.pagina {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--branco);
+}
+
+.marca {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px clamp(24px, 6vw, 80px);
+  background:
+    radial-gradient(circle at 85% 15%, rgb(200 16 46 / 55%) 0 70px, transparent 71px),
+    linear-gradient(160deg, var(--azul-900), var(--azul-700));
+  color: var(--branco);
+  overflow: hidden;
+}
+
+.slogan {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
+  line-height: 1.25;
+  max-width: 18ch;
+}
+
+.faixas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.faixa {
+  height: 12px;
+  border-radius: 0 6px 6px 0;
+  margin-left: calc(-1 * clamp(24px, 6vw, 80px));
+  box-shadow: 0 2px 6px rgb(0 0 0 / 25%);
+}
+
+.rodapeMarca {
+  font-size: var(--texto-xs);
+  color: #c7d4f7;
+}
+
+.formulario {
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.caixa {
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.caixa h1 {
+  font-size: var(--texto-3xl);
+  color: var(--azul-800);
+}
+
+.logoCelular {
+  display: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.perfis {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perfil {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  cursor: pointer;
+  transition: border-color var(--transicao), background var(--transicao);
+}
+
+.perfil:hover {
+  border-color: var(--azul-200);
+}
+
+.perfil:focus-within {
+  outline: 3px solid var(--cor-foco);
+  outline-offset: 2px;
+}
+
+.perfil strong {
+  display: block;
+}
+
+.perfil small {
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-xs);
+}
+
+.perfilAtivo {
+  border-color: var(--azul-600);
+  background: var(--azul-50);
+}
+
+.perfilIcone {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--branco);
+  color: var(--azul-700);
+  border: 1px solid var(--cor-borda);
+}
+
+.perfilAtivo .perfilIcone {
+  background: var(--azul-600);
+  color: var(--branco);
+  border-color: var(--azul-600);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rotulo {
+  font-weight: 600;
+  font-size: var(--texto-sm);
+}
+
+.entrar {
+  min-height: 48px;
+  font-size: var(--texto-md);
+}
+
+@media (max-width: 860px) {
+  .pagina {
+    grid-template-columns: 1fr;
+  }
+
+  .marca {
+    display: none;
+  }
+
+  .logoCelular {
+    display: block;
+  }
+}

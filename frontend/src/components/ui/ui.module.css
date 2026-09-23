@@ -1,0 +1,384 @@
+/* ===================== Botão ===================== */
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--raio-md);
+  font-weight: 600;
+  font-size: var(--texto-sm);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--transicao), border-color var(--transicao), color var(--transicao);
+}
+
+.botao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: var(--texto-xs);
+}
+
+.icone {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.primario { background: var(--azul-600); color: var(--branco); }
+.primario:hover:not(:disabled) { background: var(--azul-700); }
+
+.destaque { background: var(--vermelho-600); color: var(--branco); }
+.destaque:hover:not(:disabled) { background: var(--vermelho-700); }
+
+.secundario { background: var(--branco); color: var(--azul-700); border-color: var(--cor-borda-forte); }
+.secundario:hover:not(:disabled) { background: var(--azul-50); border-color: var(--azul-200); }
+
+.fantasma { background: transparent; color: var(--cor-texto-suave); }
+.fantasma:hover:not(:disabled) { background: var(--cinza-100); color: var(--cor-texto); }
+
+.perigo { background: var(--branco); color: var(--vermelho-700); border-color: var(--vermelho-100); }
+.perigo:hover:not(:disabled) { background: var(--vermelho-50); }
+
+.girar { animation: girar 0.8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* ===================== Cartão ===================== */
+.cartao {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-sm);
+  padding: var(--esp-5);
+  min-width: 0;
+}
+
+.cartaoCabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+.cartaoTitulo {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-lg);
+}
+
+.cartaoDescricao {
+  margin-top: 4px;
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+/* ===================== Cabeçalho de página ===================== */
+.cabecalho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--esp-6);
+}
+
+.cabecalho p {
+  margin-top: 6px;
+  color: var(--cor-texto-suave);
+  max-width: 70ch;
+}
+
+.cabecalhoAcoes {
+  display: flex;
+  gap: var(--esp-2);
+  flex-wrap: wrap;
+}
+
+/* ===================== Campos ===================== */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rotulo {
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  color: var(--cinza-800);
+}
+
+.obrigatorio { color: var(--vermelho-600); }
+
+.dica {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.erroCampo {
+  font-size: var(--texto-xs);
+  color: var(--vermelho-700);
+  font-weight: 600;
+}
+
+.busca {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.busca svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cor-texto-fraco);
+  pointer-events: none;
+}
+
+.busca input { padding-left: 40px; }
+
+/* ===================== Badge de faixa ===================== */
+.faixa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  border-radius: var(--raio-pill);
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  background: var(--cinza-100);
+  color: var(--cinza-800);
+  white-space: nowrap;
+}
+
+.faixaAmostra {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgb(15 23 42 / 25%);
+}
+
+/* ===================== Etiqueta ===================== */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--raio-pill);
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tom-neutro { background: var(--cinza-100); color: var(--cinza-600); }
+.tom-sucesso { background: var(--sucesso-50); color: var(--sucesso-700); }
+.tom-alerta { background: var(--alerta-50); color: var(--alerta-600); }
+.tom-erro { background: var(--erro-50); color: var(--vermelho-700); }
+.tom-info { background: var(--info-50); color: var(--azul-700); }
+
+/* ===================== Estado vazio ===================== */
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: var(--esp-10) var(--esp-6);
+  color: var(--cor-texto-suave);
+}
+
+.vazioIcone {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--azul-50);
+  color: var(--azul-600);
+  margin-bottom: 4px;
+}
+
+.vazio h3 {
+  font-size: var(--texto-md);
+  color: var(--cor-texto);
+}
+
+.vazio p {
+  max-width: 48ch;
+  font-size: var(--texto-sm);
+}
+
+/* ===================== Carregando / erro ===================== */
+.carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: var(--esp-8);
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.erroCaixa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--raio-md);
+  background: var(--erro-50);
+  color: var(--vermelho-700);
+  font-size: var(--texto-sm);
+  font-weight: 500;
+}
+
+.avisoCaixa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--raio-md);
+  background: var(--info-50);
+  color: var(--azul-800);
+  font-size: var(--texto-sm);
+}
+
+/* ===================== Barra de progresso ===================== */
+.progresso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressoTopo {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--texto-sm);
+  font-weight: 600;
+}
+
+.progressoTrilho {
+  height: 12px;
+  border-radius: var(--raio-pill);
+  background: var(--cinza-100);
+  overflow: hidden;
+}
+
+.progressoBarra {
+  height: 100%;
+  border-radius: var(--raio-pill);
+  background: linear-gradient(90deg, var(--azul-600), var(--azul-500));
+  transition: width 400ms ease;
+}
+
+/* ===================== Modal ===================== */
+.modal {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-lg);
+  color: var(--cor-texto);
+}
+
+.modal.largo { width: min(820px, calc(100vw - 24px)); }
+
+.modal::backdrop {
+  background: rgb(11 31 75 / 45%);
+}
+
+.modalConteudo {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 24px);
+}
+
+.modalTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.modalTopo h2 { font-size: var(--texto-lg); }
+
+.modalCorpo {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalRodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cinza-50);
+  flex-wrap: wrap;
+}
+
+/* ===================== Abas ===================== */
+.abas {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--cor-borda);
+  overflow-x: auto;
+  margin-bottom: var(--esp-5);
+}
+
+.aba {
+  border: 0;
+  background: transparent;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.aba:hover { color: var(--cor-texto); }
+
+.abaAtiva {
+  color: var(--azul-700);
+  border-bottom-color: var(--vermelho-600);
+}
+
+/* ===================== Segmentado (seletor de opções) ===================== */
+.segmentado {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--raio-md);
+  background: var(--cinza-100);
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.segmento {
+  border: 0;
+  background: transparent;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.segmentoAtivo {
+  background: var(--branco);
+  color: var(--azul-700);
+  box-shadow: var(--sombra-sm);
+}

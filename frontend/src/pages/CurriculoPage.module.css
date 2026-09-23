@@ -1,0 +1,193 @@
+.faixas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.faixaBotao {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 92px;
+  padding: 8px 12px;
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--branco);
+  font-weight: 600;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+  transition: border-color var(--transicao);
+}
+
+.faixaBotao:hover {
+  border-color: var(--azul-200);
+}
+
+.faixaAtiva {
+  border-color: var(--azul-600);
+  color: var(--azul-800);
+  background: var(--azul-50);
+}
+
+.fita {
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgb(15 23 42 / 25%);
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.categorias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity var(--transicao);
+}
+
+.categorias[aria-busy='true'] {
+  opacity: 0.7;
+}
+
+.categoria {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
+}
+
+.categoriaTopo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--cinza-50);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.ordem {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--azul-800);
+  color: var(--branco);
+  font-weight: 700;
+}
+
+.categoriaTexto {
+  flex: 1;
+  min-width: 0;
+}
+
+.categoriaTexto h2 {
+  font-size: var(--texto-md);
+}
+
+.categoriaTexto p {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+  margin-top: 2px;
+}
+
+.acoes {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.tecnicas {
+  list-style: none;
+  margin: 0;
+  padding: 4px 16px;
+}
+
+.tecnica {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tecnica:last-child {
+  border-bottom: 0;
+}
+
+.desativada {
+  opacity: 0.6;
+}
+
+.desativada strong {
+  text-decoration: line-through;
+}
+
+.posicao {
+  width: 24px;
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--texto-sm);
+  color: var(--vermelho-600);
+  flex-shrink: 0;
+}
+
+.tecnicaTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tecnicaTexto strong {
+  font-size: var(--texto-sm);
+}
+
+.tecnicaTexto span {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.semTecnicas {
+  padding: 16px;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-fraco);
+}
+
+.rodapeCategoria {
+  padding: 10px 16px 14px;
+}
+
+@media (max-width: 640px) {
+  .faixaBotao {
+    min-width: calc(25% - 6px);
+    padding: 6px 8px;
+    font-size: var(--texto-xs);
+  }
+
+  .categoriaTopo {
+    flex-wrap: wrap;
+  }
+
+  .tecnica {
+    flex-wrap: wrap;
+  }
+
+  .tecnica .acoes {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

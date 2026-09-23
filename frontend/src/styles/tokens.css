@@ -1,0 +1,94 @@
+/*
+ * Tokens de design do HajimeTech.
+ * Paleta: vermelho, azul e branco + tons de apoio. Todos os pares
+ * texto/fundo usados na interface atingem contraste WCAG AA (≥ 4,5:1).
+ */
+:root {
+  /* Vermelho (ação de destaque, marca) */
+  --vermelho-50: #fdecee;
+  --vermelho-100: #f9d0d6;
+  --vermelho-500: #e11d48;
+  --vermelho-600: #c8102e; /* 5,9:1 sobre branco */
+  --vermelho-700: #a00d25;
+
+  /* Azul (navegação, ações principais) */
+  --azul-50: #eef3ff;
+  --azul-100: #dce6ff;
+  --azul-200: #b9ccff;
+  --azul-500: #3b6cf6;
+  --azul-600: #1d4ed8; /* 6,7:1 sobre branco */
+  --azul-700: #1e3a8a;
+  --azul-800: #13306e;
+  --azul-900: #0b1f4b;
+
+  /* Neutros */
+  --branco: #ffffff;
+  --cinza-50: #f6f8fc;
+  --cinza-100: #eef2f7;
+  --cinza-200: #e2e8f0;
+  --cinza-300: #cbd5e1;
+  --cinza-500: #64748b; /* 4,8:1 sobre branco */
+  --cinza-600: #475569;
+  --cinza-800: #1e293b;
+  --cinza-900: #0f172a;
+
+  /* Estados */
+  --sucesso-50: #e8f6ee;
+  --sucesso-600: #15803d;
+  --sucesso-700: #166534;
+  --alerta-50: #fef3e2;
+  --alerta-600: #b45309;
+  --erro-50: var(--vermelho-50);
+  --erro-600: var(--vermelho-600);
+  --info-50: var(--azul-50);
+  --info-600: var(--azul-600);
+
+  /* Papéis semânticos */
+  --cor-fundo: var(--cinza-50);
+  --cor-superficie: var(--branco);
+  --cor-borda: var(--cinza-200);
+  --cor-borda-forte: var(--cinza-300);
+  --cor-texto: var(--cinza-900);
+  --cor-texto-suave: var(--cinza-600);
+  --cor-texto-fraco: var(--cinza-500);
+  --cor-primaria: var(--azul-600);
+  --cor-primaria-hover: var(--azul-700);
+  --cor-destaque: var(--vermelho-600);
+  --cor-foco: #f59e0b;
+
+  /* Tipografia */
+  --fonte-titulo: 'Dela Gothic One', 'Montserrat', system-ui, sans-serif;
+  --fonte-texto: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fonte-logo: 'Yuji Syuku', 'Dela Gothic One', serif;
+
+  --texto-xs: 0.75rem;
+  --texto-sm: 0.875rem;
+  --texto-md: 1rem;
+  --texto-lg: 1.125rem;
+  --texto-xl: 1.375rem;
+  --texto-2xl: 1.75rem;
+  --texto-3xl: 2.25rem;
+
+  /* Espaçamento, raios e sombras */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-10: 40px;
+
+  --raio-sm: 6px;
+  --raio-md: 10px;
+  --raio-lg: 16px;
+  --raio-pill: 999px;
+
+  --sombra-sm: 0 1px 2px rgb(15 23 42 / 6%);
+  --sombra-md: 0 4px 16px rgb(15 23 42 / 8%);
+  --sombra-lg: 0 16px 40px rgb(15 23 42 / 18%);
+
+  --largura-menu: 256px;
+  --altura-topo: 64px;
+  --transicao: 160ms ease;
+}

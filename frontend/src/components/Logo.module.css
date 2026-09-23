@@ -1,0 +1,31 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.simbolo {
+  flex-shrink: 0;
+}
+
+.texto {
+  font-family: var(--fonte-logo);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.tech {
+  color: var(--vermelho-600);
+}
+
+.claro .texto { color: var(--branco); }
+.claro .tech { color: #ff5a6e; }
+.escuro .texto { color: var(--azul-800); }
+
+.sm .simbolo { width: 28px; height: 28px; }
+.sm .texto { font-size: 1.15rem; }
+.md .simbolo { width: 36px; height: 36px; }
+.md .texto { font-size: 1.5rem; }
+.lg .simbolo { width: 56px; height: 56px; }
+.lg .texto { font-size: 2.4rem; }
