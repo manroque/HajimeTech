@@ -1,0 +1,72 @@
+.cartao {
+  display: flex;
+  flex-direction: column;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-sm);
+  padding: var(--esp-5);
+  min-width: 0;
+}
+
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.titulo {
+  font-size: var(--texto-lg);
+}
+
+.explicacao {
+  margin-top: 4px;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+.corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.rodape {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.tooltip {
+  min-width: 180px;
+  padding: 10px 12px;
+  background: var(--branco);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-md);
+  font-size: var(--texto-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tooltipLinha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cor-texto-suave);
+}
+
+.tooltipLinha b {
+  margin-left: auto;
+  color: var(--cor-texto);
+}
+
+.tooltipCor {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgb(15 23 42 / 20%);
+}

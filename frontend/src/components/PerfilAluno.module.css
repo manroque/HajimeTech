@@ -1,0 +1,237 @@
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.topo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.identidade {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 5px solid;
+  background: var(--azul-800);
+  color: var(--branco);
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-2xl);
+  flex-shrink: 0;
+}
+
+.identidadeTexto {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.acoes a {
+  text-decoration: none;
+}
+
+.dados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.dados dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+  font-weight: 600;
+}
+
+.dados dd {
+  margin: 2px 0 0;
+  font-size: var(--texto-sm);
+}
+
+.obs {
+  grid-column: 1 / -1;
+}
+
+.resumo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* ----- Jornada de faixas ----- */
+.jornada {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.jornada li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.35;
+  text-align: center;
+}
+
+.jornada li.conquistada {
+  opacity: 1;
+}
+
+.jornada li[aria-current='step'] .fita {
+  outline: 3px solid var(--vermelho-600);
+  outline-offset: 2px;
+}
+
+.fita {
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgb(15 23 42 / 25%);
+}
+
+.jornadaNome {
+  font-size: var(--texto-xs);
+  font-weight: 600;
+}
+
+.jornadaData {
+  font-size: 0.68rem;
+  color: var(--cor-texto-fraco);
+  min-height: 1em;
+}
+
+/* ----- Frequência ----- */
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.numeros div {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border-radius: var(--raio-md);
+  background: var(--azul-50);
+}
+
+.numeros strong {
+  font-family: var(--fonte-titulo);
+  font-weight: 400;
+  font-size: var(--texto-2xl);
+  color: var(--azul-800);
+}
+
+.numeros span {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+.chamadas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chamadas span {
+  padding: 4px 10px;
+  border-radius: var(--raio-pill);
+  font-size: var(--texto-xs);
+  font-weight: 600;
+}
+
+.presente {
+  background: var(--sucesso-50);
+  color: var(--sucesso-700);
+}
+
+.falta {
+  background: var(--erro-50);
+  color: var(--vermelho-700);
+}
+
+/* ----- Técnicas e premiações ----- */
+.subtitulo {
+  margin-bottom: 8px;
+}
+
+.tecnicas,
+.premios {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.tecnicas li,
+.premios li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+}
+
+.premios li {
+  justify-content: flex-start;
+}
+
+.tecnicas span,
+.premios span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tecnicas strong,
+.premios strong {
+  font-size: var(--texto-sm);
+}
+
+.tecnicas small,
+.premios small {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+@media (max-width: 900px) {
+  .resumo,
+  .dados,
+  .numeros {
+    grid-template-columns: 1fr;
+  }
+
+  .jornada {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

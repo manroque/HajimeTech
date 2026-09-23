@@ -1,0 +1,158 @@
+/* Estilos compartilhados entre as páginas. */
+
+.barraFiltros {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.barraFiltros > * {
+  min-width: 180px;
+}
+
+.grade2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grade3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.gradeCartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.formGrade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.formGrade .inteiro {
+  grid-column: 1 / -1;
+}
+
+.nomeLink {
+  font-weight: 600;
+  color: var(--azul-700);
+  text-decoration: none;
+}
+
+.nomeLink:hover {
+  text-decoration: underline;
+}
+
+.acoesLinha {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lista > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.lista > li:last-child {
+  border-bottom: 0;
+}
+
+.listaTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.listaTexto strong {
+  font-size: var(--texto-sm);
+}
+
+.listaTexto span {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.inativo {
+  opacity: 0.6;
+}
+
+.cartaoEscola {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cartaoEscolaSelecionada {
+  border: 2px solid var(--azul-600);
+  box-shadow: 0 0 0 4px var(--azul-50);
+}
+
+.cartaoEscola h2 {
+  font-size: var(--texto-lg);
+}
+
+.metricas {
+  display: flex;
+  gap: 16px;
+}
+
+.metrica {
+  display: flex;
+  flex-direction: column;
+}
+
+.metrica strong {
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-xl);
+  color: var(--azul-700);
+}
+
+.metrica span {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.rodapeCartao {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+@media (max-width: 1100px) {
+  .grade3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .grade2,
+  .grade3,
+  .formGrade {
+    grid-template-columns: 1fr;
+  }
+
+  .barraFiltros > * {
+    flex: 1 1 100%;
+  }
+}
