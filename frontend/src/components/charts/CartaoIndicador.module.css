@@ -1,0 +1,69 @@
+.cartao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
+}
+
+/* faixa colorida no topo do cartão */
+.cartao::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--azul-600) 0 70%, var(--vermelho-600) 70%);
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rotulo {
+  font-weight: 600;
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+.icone {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--azul-50);
+  color: var(--azul-700);
+}
+
+.numero {
+  font-family: var(--fonte-titulo);
+  font-weight: 400;
+  font-size: var(--texto-3xl);
+  line-height: 1.1;
+  color: var(--cinza-900);
+  font-variant-numeric: tabular-nums;
+}
+
+.variacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--texto-xs);
+  font-weight: 600;
+}
+
+.alta { color: var(--sucesso-700); }
+.baixa { color: var(--vermelho-700); }
+.neutra { color: var(--cor-texto-fraco); }
+
+.explicacao {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
