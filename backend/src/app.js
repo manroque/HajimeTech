@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 
+import { autenticar } from './middleware/auth.js';
 import { tenant } from './middleware/tenant.js';
 
 import auth from './routes/auth.js';
@@ -28,10 +29,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Login e sessão (não passam pelo middleware legado `tenant`)
+// Login e sessão (públicos; o restante da API exige token)
 app.use('/api/auth', auth);
 
-app.use('/api', tenant);
+app.use('/api', autenticar, tenant);
 
 app.use('/api/alunos', alunos);
 app.use('/api/turmas', turmas);
