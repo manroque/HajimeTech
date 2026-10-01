@@ -1,0 +1,397 @@
+# =============================================================================
+# HajimeTech API — requisições para a extensão REST Client (VS Code)
+# =============================================================================
+#
+# Como usar
+#   1. Suba o banco (database/docker-compose.yml) e a API (`npm run dev`).
+#   2. Envie os 3 logins da seção "Auth" (clique em "Send Request").
+#      Os tokens são lidos das respostas nomeadas (# @name) e usados abaixo.
+#   3. Envie qualquer outra requisição.
+#
+# Autenticação
+#   Tudo exige `Authorization: Bearer <token>`, exceto /health e /auth/login.
+#   A escola vem do token (cabeçalhos x-academia-id / x-user-role são ignorados).
+#   Perfis: administrador (global, sem escola) | professor | aluno.
+#   Escrita (POST/PUT/PATCH/DELETE) nas rotas legadas: administrador e professor.
+#
+# Respostas de erro comuns
+#   400  dados inválidos, ou administrador global sem escola nas rotas legadas
+#   401  sem token, token inválido/expirado, login incorreto
+#   403  perfil sem permissão (ex.: aluno escrevendo)
+#   404  registro inexistente ou de outra escola
+#
+# ATENÇÃO: as rotas legadas (alunos, turmas, frequências, graduações, técnico,
+# currículo, dashboard) passam pela autenticação, mas ainda consultam o schema
+# antigo (`academia_id`, `curriculo_itens`...) e podem responder 500.
+# Ver backend/README.md, seção 2.
+#
+# Índice de rotas
+#   GET    /health                          público
+#   POST   /auth/login                      público
+#   GET    /auth/me                         qualquer perfil
+#   GET    /alunos                          qualquer perfil
+#   POST   /alunos                          admin, professor
+#   PUT    /alunos/:id                      admin, professor
+#   DELETE /alunos/:id                      admin, professor (desativa)
+#   GET    /turmas                          qualquer perfil
+#   POST   /turmas                          admin, professor
+#   GET    /frequencias?data=AAAA-MM-DD     qualquer perfil
+#   POST   /frequencias                     admin, professor (upsert aluno+data)
+#   GET    /graduacoes                      qualquer perfil
+#   POST   /graduacoes                      admin, professor
+#   GET    /tecnico/aluno/:id               qualquer perfil
+#   POST   /tecnico                         admin, professor
+#   GET    /curriculo?faixa=                qualquer perfil
+#   POST   /curriculo/categorias            admin, professor
+#   PUT    /curriculo/categorias/:id        admin, professor
+#   DELETE /curriculo/categorias/:id        admin, professor
+#   POST   /curriculo/itens                 admin, professor
+#   PUT    /curriculo/itens/:id             admin, professor
+#   PATCH  /curriculo/itens/reordenar       admin, professor
+#   DELETE /curriculo/itens/:id             admin, professor (desativa)
+#   GET    /dashboard                       qualquer perfil
+# =============================================================================
+
+@baseUrl = http://localhost:3000/api
+
+# Senha de todos os usuários do seed (database/seed.sql)
+@senha = hajime123
+
+# IDs do seed (escola Hajime)
+@alunoId = 00000005-0000-4000-8000-000000000001
+@turmaId = 00000003-0000-4000-8000-000000000001
+@categoriaId = 00000008-0000-4000-8000-000000000001
+@tecnicaId = 00000009-0000-4000-8000-000000000001
+@tecnicaId2 = 00000009-0000-4000-8000-000000000002
+
+# Tokens capturados dos logins abaixo
+@tokenProfessor = {{loginProfessor.response.body.token}}
+@tokenAluno = {{loginAluno.response.body.token}}
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+
+###############################################################################
+# Health
+###############################################################################
+
+### Health — verifica se a API está no ar
+# Público. 200 → { status: "ok", projeto: "HajimeTech" }
+GET {{baseUrl}}/health
+
+
+###############################################################################
+# Auth
+###############################################################################
+
+### Login — professor (Sensei Ana, escola Hajime)
+# Público. 200 → { token, usuario }
+# @name loginProfessor
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@hajime.local",
+  "senha": "{{senha}}"
+}
+
+### Login — aluno (Lucas Oliveira, escola Hajime)
+# @name loginAluno
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "lucas@aluno.local",
+  "senha": "{{senha}}"
+}
+
+### Login — administrador global (sem escola)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hajimetech.local",
+  "senha": "{{senha}}"
+}
+
+### Login com senha errada → 401 "E-mail ou senha incorretos."
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@hajime.local",
+  "senha": "errada"
+}
+
+### Login sem senha → 400 "Informe o e-mail e a senha."
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@hajime.local"
+}
+
+### Usuário atual — relido do banco (confirma que segue ativo)
+# Qualquer perfil. 200 → Usuario (camelCase)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{tokenProfessor}}
+
+### Usuário atual sem token → 401
+GET {{baseUrl}}/auth/me
+
+
+###############################################################################
+# Verificações de proteção
+###############################################################################
+
+### Sem token → 401 "Faça login para continuar."
+GET {{baseUrl}}/alunos
+
+### Token inválido → 401 "Sessão expirada ou inválida. Entre novamente."
+GET {{baseUrl}}/alunos
+Authorization: Bearer abc.def.ghi
+
+### Cabeçalhos legados sem token não dão acesso → 401
+POST {{baseUrl}}/turmas
+Content-Type: application/json
+x-user-role: admin
+x-academia-id: 00000001-0000-4000-8000-000000000001
+
+{
+  "nome": "Turma invasora",
+  "horario": "Seg 18h"
+}
+
+### Aluno tentando escrever → 403 "Você não tem permissão para realizar esta ação."
+POST {{baseUrl}}/alunos
+Authorization: Bearer {{tokenAluno}}
+Content-Type: application/json
+
+{
+  "nome": "Fulano"
+}
+
+### Administrador global sem escola → 400 "Selecione uma escola."
+GET {{baseUrl}}/alunos
+Authorization: Bearer {{tokenAdmin}}
+
+
+###############################################################################
+# Alunos
+###############################################################################
+
+### Listar alunos ativos da escola (com nome da turma)
+GET {{baseUrl}}/alunos
+Authorization: Bearer {{tokenProfessor}}
+
+### Cadastrar aluno
+# Obrigatório: nome. faixa_atual padrão "Branca". 201 → aluno
+POST {{baseUrl}}/alunos
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Aluno de Teste",
+  "data_nascimento": "2012-05-10",
+  "faixa_atual": "Branca",
+  "telefone": "(11) 99999-0000",
+  "observacoes": "",
+  "turma_id": "{{turmaId}}"
+}
+
+### Editar aluno
+# Obrigatório: nome. 200 → aluno | 404
+PUT {{baseUrl}}/alunos/{{alunoId}}
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Lucas Oliveira",
+  "data_nascimento": "2012-03-15",
+  "faixa_atual": "Branca",
+  "telefone": "",
+  "observacoes": "",
+  "turma_id": "{{turmaId}}"
+}
+
+### Desativar aluno (soft delete: ativo = false)
+# 200 → { ok: true } | 404
+DELETE {{baseUrl}}/alunos/{{alunoId}}
+Authorization: Bearer {{tokenProfessor}}
+
+
+###############################################################################
+# Turmas
+###############################################################################
+
+### Listar turmas da escola
+GET {{baseUrl}}/turmas
+Authorization: Bearer {{tokenProfessor}}
+
+### Cadastrar turma
+# Obrigatório: nome, horario. 201 → turma
+POST {{baseUrl}}/turmas
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Turma de Teste",
+  "horario": "Ter e Qui 19h",
+  "faixa_etaria": "Adulto"
+}
+
+
+###############################################################################
+# Frequências
+###############################################################################
+
+### Listar frequências de uma data (padrão: hoje)
+GET {{baseUrl}}/frequencias?data=2026-10-01
+Authorization: Bearer {{tokenProfessor}}
+
+### Registrar presença (atualiza se já existir para aluno + data)
+# Obrigatório: aluno_id, data. presente padrão true. 200 → frequência
+POST {{baseUrl}}/frequencias
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "aluno_id": "{{alunoId}}",
+  "turma_id": "{{turmaId}}",
+  "data": "2026-10-01",
+  "presente": true
+}
+
+
+###############################################################################
+# Graduações
+###############################################################################
+
+### Listar graduações da escola (com nome do aluno)
+GET {{baseUrl}}/graduacoes
+Authorization: Bearer {{tokenProfessor}}
+
+### Registrar graduação (também atualiza a faixa do aluno)
+# Obrigatório: aluno_id, nova_faixa, data_graduacao. 201 → graduação
+POST {{baseUrl}}/graduacoes
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "aluno_id": "{{alunoId}}",
+  "faixa_anterior": "Branca",
+  "nova_faixa": "Cinza",
+  "data_graduacao": "2026-10-01",
+  "observacoes": ""
+}
+
+
+###############################################################################
+# Acompanhamento técnico
+###############################################################################
+
+### Listar acompanhamento técnico de um aluno
+GET {{baseUrl}}/tecnico/aluno/{{alunoId}}
+Authorization: Bearer {{tokenProfessor}}
+
+### Registrar acompanhamento técnico
+# Obrigatório: aluno_id, tecnica, nivel. 201 → registro
+POST {{baseUrl}}/tecnico
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "aluno_id": "{{alunoId}}",
+  "tecnica": "O-soto-gari",
+  "nivel": "Em evolução",
+  "observacao": ""
+}
+
+
+###############################################################################
+# Currículo
+###############################################################################
+
+### Currículo de uma faixa (categorias com seus itens; padrão: Azul)
+GET {{baseUrl}}/curriculo?faixa=Azul
+Authorization: Bearer {{tokenProfessor}}
+
+### Nova categoria (entra no fim da lista da faixa)
+# Obrigatório: faixa, nome. 201 → categoria com itens: []
+POST {{baseUrl}}/curriculo/categorias
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "faixa": "Azul",
+  "kyu_dan": "5º kyu",
+  "nome": "Categoria de Teste",
+  "descricao": ""
+}
+
+### Editar categoria
+# 200 → categoria | 404
+PUT {{baseUrl}}/curriculo/categorias/{{categoriaId}}
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Fundamentos",
+  "descricao": "Base de comportamento e movimentação no tatame.",
+  "ordem": 1
+}
+
+### Excluir categoria
+# 200 → { ok: true|false }
+DELETE {{baseUrl}}/curriculo/categorias/{{categoriaId}}
+Authorization: Bearer {{tokenProfessor}}
+
+### Nova técnica (item) numa categoria (entra no fim da lista)
+# Obrigatório: categoria_id, nome. 201 → item
+POST {{baseUrl}}/curriculo/itens
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "categoria_id": "{{categoriaId}}",
+  "nome": "Técnica de Teste"
+}
+
+### Editar técnica
+# 200 → item | 404
+PUT {{baseUrl}}/curriculo/itens/{{tecnicaId}}
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Rei (saudação)",
+  "ordem": 1
+}
+
+### Reordenar técnicas
+# Envia a nova ordem de cada item. 200 → { ok: true }
+PATCH {{baseUrl}}/curriculo/itens/reordenar
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "itens": [
+    { "id": "{{tecnicaId2}}", "ordem": 1 },
+    { "id": "{{tecnicaId}}", "ordem": 2 }
+  ]
+}
+
+### Desativar técnica (soft delete)
+# 200 → { ok: true|false }
+DELETE {{baseUrl}}/curriculo/itens/{{tecnicaId}}
+Authorization: Bearer {{tokenProfessor}}
+
+
+###############################################################################
+# Dashboard
+###############################################################################
+
+### Indicadores da escola
+# 200 → { total_alunos, presencas_30_dias, faixas: [...], turmas: [...] }
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{tokenProfessor}}

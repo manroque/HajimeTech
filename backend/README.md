@@ -1,7 +1,6 @@
 # Backend do HajimeTech
 
-> **Status: o backend NÃO foi implementado nesta entrega.**
-> O front-end funciona 100% com dados simulados. Este documento é o **contrato** que a API real deve cumprir para substituir a simulação sem alterar nenhuma tela.
+> **Status:** a **autenticação** (`POST /api/auth/login` e `GET /api/auth/me`, sobre o modelo de `prisma/schema.prisma`) está implementada e integrada ao front. Os demais endpoints ainda **não** foram implementados: o restante do front funciona com dados simulados. Este documento é o **contrato** que a API real deve cumprir para substituir a simulação sem alterar nenhuma tela.
 
 ## Sumário
 
@@ -12,7 +11,7 @@
 5. [Formato de erro](#5-formato-de-erro)
 6. [Regras de negócio que a API deve garantir](#6-regras-de-negócio-que-a-api-deve-garantir)
 7. [Endpoints](#7-endpoints)
-8. [Como rodar o backend](#8-como-rodar-o-backend) *(a preencher pela equipe)*
+8. [Como rodar o backend](#8-como-rodar-o-backend)
 
 ---
 
@@ -21,20 +20,20 @@
 ```
 Telas (React) ──► frontend/src/services/*.ts ──► mockDb.ts (sessionStorage)
                           │
-                          └── (futuro) http.ts ──► API REST ──► PostgreSQL (database/schema.sql)
+                          └── (futuro) http.ts ──► API REST ──► PostgreSQL (prisma/schema.prisma)
 ```
 
 - As telas **só** acessam dados pela camada `frontend/src/services` (`alunosService`, `turmasService`, `curriculoService`, `dashboardService` etc.).
 - Hoje cada função de service executa `simular(() => ...)`, que lê/escreve num "banco" em memória (`frontend/src/services/mockDb.ts`), persistido no `sessionStorage` do navegador. Os dados iniciais vêm de `frontend/src/mocks`.
 - Cada função tem um comentário `INTEGRAÇÃO BACKEND: MÉTODO /api/...` indicando o endpoint que a substituirá. A [seção 7](#7-endpoints) consolida todos eles.
-- O modelo de dados oficial é **`database/schema.sql`** (veja `database/README.md`), e os tipos do front (`frontend/src/types/index.ts`) espelham esse modelo em `camelCase`.
+- O modelo de dados oficial é **`backend/prisma/schema.prisma`**, versionado em `backend/prisma/migrations` (veja `database/README.md`), e os tipos do front (`frontend/src/types/index.ts`) espelham esse modelo em `camelCase`.
 - O `mockDb.ts` já simula o comportamento esperado da API: latência, cópia dos dados, erros `403`/`404`/`400`/`422` com mensagem em português.
 
 ## 2. Protótipo antigo em `backend/src`
 
-A pasta `backend/` contém um **protótipo anterior** em Express + `pg` (`src/app.js`, `src/routes/*.js`, `migrations/001_init.sql`, `tests/curriculo.test.js`). Ele foi **mantido apenas como referência** e **não é compatível** com o front-end atual nem com `database/schema.sql`. Para reaproveitá-lo, é preciso alinhá-lo ao novo modelo. Principais diferenças:
+A pasta `backend/` contém um **protótipo anterior** em Express + `pg` (`src/app.js`, `src/routes/*.js`, `tests/curriculo.test.js`), escrito para um schema antigo que já foi removido. Ele foi **mantido apenas como referência** e **não é compatível** com o front-end atual nem com o modelo atual (`prisma/schema.prisma`). Para reaproveitá-lo, é preciso alinhá-lo ao novo modelo. Principais diferenças:
 
-| Tema | Protótipo antigo (`migrations/001_init.sql` + rotas) | Modelo atual (`database/schema.sql` + services) |
+| Tema | Protótipo antigo (rotas; schema antigo removido) | Modelo atual (`prisma/schema.prisma` + services) |
 |---|---|---|
 | Unidade | Tabela `academias` (só `nome`) | Tabela `escolas` (nome, cidade, endereço, telefone, responsável, `ativo`) |
 | Faixas | Texto livre (`alunos.faixa_atual = 'Branca'`) | Tabela global `faixas` com slug (`faixa_id = 'branca'`), ordem, cores e `conteudo_definido` |
@@ -581,22 +580,20 @@ Resposta:
 
 ## 8. Como rodar o backend
 
-> **A preencher pela equipe** quando a implementação existir. Os itens abaixo são um roteiro.
-
 ### Pré-requisitos
 
-- *A preencher pela equipe.* Ex.: Node.js (versão), npm/pnpm, PostgreSQL 14+ ou Docker.
-- Banco criado conforme `database/README.md`.
+- Node.js 20+ e npm.
+- PostgreSQL rodando (o jeito mais simples: `cd database && docker compose up -d`, que sobe vazio). As tabelas são criadas pelas migrações do Prisma (abaixo).
 
 ### Variáveis de ambiente
 
-*A preencher pela equipe.* Sugestão de `backend/.env.example`:
+Copie `backend/.env.example` para `backend/.env`:
 
 | Variável | Exemplo | Descrição |
 |---|---|---|
 | `PORT` | `3000` | Porta da API |
 | `DATABASE_URL` | `postgresql://hajimetech:hajimetech@localhost:5433/hajimetech` | Conexão com o PostgreSQL (valor do `database/docker-compose.yml`) |
-| `JWT_SECRET` | *(segredo forte)* | Assinatura dos tokens |
+| `JWT_SECRET` | *(segredo forte)* | Assinatura dos tokens. **Obrigatório** |
 | `JWT_EXPIRES_IN` | `8h` | Validade do token |
 | `CORS_ORIGIN` | `http://localhost:5173` | Origem permitida (front em desenvolvimento) |
 | `NODE_ENV` | `development` | Ambiente |
@@ -604,23 +601,48 @@ Resposta:
 ### Instalação
 
 ```bash
-# A preencher pela equipe
 cd backend
 npm install
+cp .env.example .env
+npm run dev
 ```
+
+Com o Docker (`database/docker-compose.yml`), o banco já sobe com as migrações aplicadas e o seed carregado. Com um PostgreSQL instalado, rode antes `npm run db:deploy` (cria/atualiza as tabelas) e `npm run db:seed` (carrega `../database/seed.sql`).
+
+Os usuários do `database/seed.sql` já vêm com a senha `hajime123` (hash bcrypt gerado pelo `pgcrypto`).
+
+### Migrações (Prisma)
+
+O Prisma é usado **para controlar as migrações** do banco. As consultas da API continuam em SQL com o `pg` (`src/db/index.js`). A configuração fica em `prisma.config.js` (lê `DATABASE_URL` do `.env`).
+
+- **Alterar o modelo:** edite `prisma/schema.prisma` e rode `npm run db:migrate -- --name descricao`. O Prisma gera `prisma/migrations/<data>_descricao/migration.sql` e aplica no banco local. Faça commit da migração junto com o schema.
+- **O que o Prisma não representa** (CHECK, gatilho, índice por expressão, extensão): `npm run db:migrate -- --create-only --name descricao`, edite o SQL gerado e rode `npm run db:migrate` para aplicar. Os que já existem estão no fim de `prisma/migrations/0_init/migration.sql`.
+- **Nunca edite** uma migração já aplicada: crie uma nova.
+- Se um dia a API passar a usar o Prisma Client, o bloco `generator` já está no schema (saída em `src/generated/prisma`, ignorada pelo git). Atenção: colunas `DATE`/`TIME` chegam como `Date` do JavaScript e precisam virar `AAAA-MM-DD` / `HH:MM` nas respostas.
 
 ### Comandos
 
 | Comando | O que faz |
 |---|---|
-| *A preencher* | Rodar em desenvolvimento |
-| *A preencher* | Rodar em produção |
-| *A preencher* | Criar senhas iniciais dos usuários de demonstração |
+| `npm run dev` | Rodar em desenvolvimento (reinicia ao salvar) |
+| `npm start` | Rodar em produção |
+| `npm test` | Testes (Jest + Supertest) |
+| `npm run db:migrate` | Cria uma migração a partir do `schema.prisma` e aplica (desenvolvimento) |
+| `npm run db:deploy` | Aplica as migrações pendentes (produção/CI; não apaga dados) |
+| `npm run db:seed` | Carrega `database/seed.sql` (só se o banco estiver vazio) |
+| `npm run db:reset` | **Apaga o banco**, reaplica todas as migrações e carrega o seed (só desenvolvimento) |
+| `npm run db:status` | Mostra se o banco está em dia com as migrações |
+
+### Autenticação implementada
+
+- `src/routes/auth.js`: `POST /api/auth/login` (bcrypt + JWT com `sub`, `perfil`, `escolaId`, `alunoId`) e `GET /api/auth/me` (relê o usuário e recusa inativos).
+- `src/middleware/auth.js`: `autenticar` (exige `Authorization: Bearer`, define `req.usuario`) e `exigirPerfil(...perfis)`. Use-os nas novas rotas `/api/escolas/:escolaId/...`; as rotas do protótipo antigo ainda não os usam.
+- No front, `AuthContext` guarda `{ token, usuario }` no `sessionStorage`, envia o token por `services/http.ts`, valida a sessão com `/auth/me` ao recarregar e volta ao login em qualquer `401`.
 
 ### Testes
 
-*A preencher pela equipe:* framework, como rodar, cobertura mínima. Sugestão: testes de integração por endpoint cobrindo `403` por perfil, isolamento entre as duas escolas do seed e as regras da [seção 6](#6-regras-de-negócio-que-a-api-deve-garantir).
+`npm test` roda Jest + Supertest. `tests/auth.test.js` cobre o login sem precisar de banco (o `pool` é simulado). Próximos passos sugeridos: testes de integração por endpoint cobrindo `403` por perfil, isolamento entre as duas escolas do seed e as regras da [seção 6](#6-regras-de-negócio-que-a-api-deve-garantir).
 
 ### Deploy
 
-*A preencher pela equipe:* hospedagem da API e do banco, variáveis em produção, HTTPS, backup do banco, como rodar `schema.sql` em produção (sem o `seed.sql`).
+*A preencher pela equipe:* hospedagem da API e do banco, variáveis em produção, HTTPS, backup do banco, aplicar o schema em produção com `npm run db:deploy` (sem o `seed.sql`).

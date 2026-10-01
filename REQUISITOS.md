@@ -4,7 +4,7 @@ Sistema web de gestão para academias de judô, com suporte a **várias escolas*
 
 Documentos relacionados: [`database/README.md`](database/README.md) (modelo de dados) e [`backend/README.md`](backend/README.md) (contrato da API).
 
-> **Situação da entrega:** o front-end funciona com dados simulados (mocks). Onde um requisito depende do backend, isso está indicado como *(backend)*.
+> **Situação da entrega:** o login é real (API + PostgreSQL); o restante do front-end funciona com dados simulados (mocks). Onde um requisito depende do backend, isso está indicado como *(backend)*.
 
 ---
 
@@ -21,7 +21,7 @@ Documentos relacionados: [`database/README.md`](database/README.md) (modelo de d
 
 | ID | Requisito |
 |---|---|
-| RF03 | No protótipo, a entrada deve ser **simulada**: o usuário escolhe um dos usuários de demonstração (administrador, professores e alunos). *(backend: login com e-mail e senha, retornando um token.)* |
+| RF03 | A entrada deve ser feita com **e-mail e senha**, validados pela API (`POST /api/auth/login`), que devolve um token com expiração. Senha errada, e-mail inexistente ou usuário inativo recebem a mesma mensagem ("E-mail ou senha incorretos."). A sessão sobrevive a recarregar a página e termina ao expirar o token. |
 | RF04 | O sistema deve adaptar menus, telas e ações ao **perfil** do usuário (Administrador, Professor, Aluno), escondendo o que ele não pode fazer, e permitir **sair** / trocar de usuário. |
 | RF05 | O protótipo deve permitir **restaurar os dados de exemplo**, descartando as alterações feitas na sessão. |
 

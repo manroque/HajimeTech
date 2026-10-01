@@ -1,21 +1,27 @@
 /**
- * Autenticação simulada, escolas, faixas e turmas.
- * Cada função indica o endpoint REST que a substituirá.
+ * Autenticação (API real), escolas, faixas e turmas (simulados).
+ * Cada função simulada indica o endpoint REST que a substituirá.
  */
 import type { Escola, Faixa, Turma, Usuario } from '../types';
+import { http } from './http';
 import { agora, db, encontrar, exigirPerfil, novoId, salvar, simular, usuarioAtual } from './mockDb';
 
 /* ---------------------------------------------------------------- Autenticação */
 
+export interface SessaoLogin {
+  token: string;
+  usuario: Usuario;
+}
+
 export const authService = {
-  /** INTEGRAÇÃO BACKEND: não existe na API real, onde o login usa e-mail e senha. */
-  listarUsuariosDemo(): Promise<Usuario[]> {
-    return simular(() => db().usuarios.filter((u) => u.ativo));
+  /** POST /api/auth/login { email, senha } → { token, usuario } */
+  entrar(email: string, senha: string): Promise<SessaoLogin> {
+    return http.post<SessaoLogin>('/auth/login', { email, senha });
   },
 
-  /** INTEGRAÇÃO BACKEND: POST /api/auth/login { email, senha } → { token, usuario } */
-  entrar(usuarioId: string): Promise<Usuario> {
-    return simular(() => encontrar(db().usuarios, usuarioId, 'Usuário'));
+  /** GET /api/auth/me → usuário do token (confirma que a sessão continua válida) */
+  sessaoAtual(): Promise<Usuario> {
+    return http.get<Usuario>('/auth/me');
   },
 };
 

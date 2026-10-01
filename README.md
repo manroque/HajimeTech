@@ -19,8 +19,8 @@ O sistema suporta **mais de uma academia/escola de judô**. Cada aluno pertence 
 | Parte | Situação |
 |---|---|
 | Front-end (`/frontend`) | Completo e navegável, com **dados mockados** |
-| Banco de dados (`/database`) | Pronto: `schema.sql`, `seed.sql` e DER |
-| Backend (`/backend`) | Não implementado nesta entrega; há contratos de API e um ponto de partida para a equipe |
+| Banco de dados | Pronto: modelo e migrações Prisma (`backend/prisma`), `database/seed.sql` e DER |
+| Backend (`/backend`) | Login (e-mail e senha, JWT) implementado; demais endpoints documentados como contrato para a equipe |
 
 ---
 
@@ -63,7 +63,7 @@ Administradores e professores podem editar o currículo.
 
 **Como isso aparece no sistema:**
 
-- Na tela **Currículo**, as faixas Marrom e Preta mostram o aviso *"Conteúdo ainda não definido pela academia"*. O front e o banco (por meio de um gatilho no `schema.sql`) recusam o cadastro de itens nessas faixas.
+- Na tela **Currículo**, as faixas Marrom e Preta mostram o aviso *"Conteúdo ainda não definido pela academia"*. O front e o banco (por meio de um gatilho criado na migração inicial) recusam o cadastro de itens nessas faixas.
 - As faixas Branca a Roxa trazem um **currículo de exemplo** baseado no Gokyo do Kodokan, que cada academia pode editar à vontade.
 - Técnicas e categorias nunca são apagadas, apenas **desativadas**, para preservar o histórico dos alunos.
 - Somente **administradores e professores** veem os botões de criar, editar, reordenar e desativar. O perfil Aluno vê o currículo em modo leitura.
@@ -182,7 +182,7 @@ Novidades desta versão: indicadores do dashboard em formato de tabela (com comp
 | **Professor** | Gerencia alunos, turmas, frequência, graduações, avaliações, premiações e o currículo **da sua escola** |
 | **Aluno** | Somente leitura: acompanha a própria evolução ("Minha evolução") e consulta o currículo |
 
-No front, o login é **simulado**: você escolhe o perfil na tela de entrada. A matriz completa de permissões está em [`REQUISITOS.md`](REQUISITOS.md).
+O login usa **e-mail e senha** validados pela API (contas de demonstração com a senha `hajime123`, listadas na tela de entrada). A matriz completa de permissões está em [`REQUISITOS.md`](REQUISITOS.md).
 
 ---
 
@@ -277,15 +277,18 @@ HajimeTech/
 │       ├── types/          ← tipos de domínio (espelham o banco)
 │       └── utils/          ← formatação e matriz de permissões
 ├── database/
-│   ├── schema.sql          ← tabelas, chaves, índices, constraints e gatilhos
+│   ├── docker-compose.yml  ← PostgreSQL de desenvolvimento (sobe vazio)
 │   ├── seed.sql            ← dados de exemplo (gerado, coerente com os mocks)
 │   └── README.md           ← como criar o banco + DER (Mermaid)
 └── backend/
     ├── README.md           ← contratos de API esperados + espaço para a equipe
-    └── src/ ...            ← protótipo Express anterior (referência, não alinhado ao novo schema)
+    ├── prisma/
+    │   ├── schema.prisma   ← modelo de dados oficial (fonte da verdade)
+    │   └── migrations/     ← migrações SQL versionadas (tabelas, constraints, gatilhos)
+    └── src/ ...            ← login (auth) + protótipo Express anterior (referência, não alinhado ao novo schema)
 ```
 
-**Telas:** Login (perfil simulado) · Escolas · Painel · Alunos · Perfil do aluno · Turmas · Frequência · Graduações · Acompanhamento técnico · Currículo · Avaliações · Premiações · Relatórios · Minha evolução (aluno).
+**Telas:** Login (e-mail e senha) · Escolas · Painel · Alunos · Perfil do aluno · Turmas · Frequência · Graduações · Acompanhamento técnico · Currículo · Avaliações · Premiações · Relatórios · Minha evolução (aluno).
 
 ---
 
@@ -341,27 +344,20 @@ Abra **http://localhost:5173** no navegador.
 
 O modelo completo, com DER, dicionário de dados e convenções, está em [`database/README.md`](database/README.md).
 
-**Com Docker (mais fácil):** o banco sobe já com as tabelas e os dados de exemplo.
+O schema é versionado com **migrações do Prisma** (`backend/prisma`). Com Docker, o banco já sobe **com as tabelas e os dados de exemplo** na primeira vez (o serviço `migrate` aplica as migrações e carrega o seed):
 
 ```bash
-cd database
-docker compose up -d
+cd database && docker compose up -d
 ```
 
-Conexão: `postgresql://hajimetech:hajimetech@localhost:5433/hajimetech` (porta 5433, para não conflitar com um PostgreSQL instalado).
+Conexão: `postgresql://hajimetech:hajimetech@localhost:5433/hajimetech` (porta 5433, para não conflitar com um PostgreSQL instalado). Com um PostgreSQL instalado, aponte `DATABASE_URL` em `backend/.env` para ele e rode, em `backend/`, `npm install && npm run db:deploy && npm run db:seed`.
 
-**Com PostgreSQL instalado:**
-
-```bash
-createdb hajimetech
-psql -d hajimetech -f database/schema.sql
-psql -d hajimetech -f database/seed.sql
-```
+Para alterar o modelo: edite `backend/prisma/schema.prisma` e rode `npm run db:migrate -- --name <descricao>` (detalhes em [`database/README.md`](database/README.md)).
 
 - **PostgreSQL 14+**.
 - `seed.sql` é **gerado** pelos mocks do front (`npm run gerar-seed`), então banco e interface têm exatamente os mesmos dados. Não edite o seed à mão.
 - As datas de exemplo são relativas (`CURRENT_DATE - n`), para que o painel sempre mostre dados recentes.
-- O `schema.sql` e o `seed.sql` foram validados num PostgreSQL real, e o seed não cria nenhuma técnica para as faixas Marrom e Preta.
+- As migrações e o `seed.sql` foram validados num PostgreSQL real, e o seed não cria nenhuma técnica para as faixas Marrom e Preta.
 
 ---
 
@@ -372,10 +368,10 @@ psql -d hajimetech -f database/seed.sql
 ### O que já foi feito (ponto de partida)
 
 - **Contratos de API:** cada função em [`frontend/src/services`](frontend/src/services) tem um comentário `INTEGRAÇÃO BACKEND: MÉTODO /api/...` com o endpoint esperado. A lista completa de endpoints, com corpos de exemplo, está em [`backend/README.md`](backend/README.md).
-- **Modelo de dados:** [`database/schema.sql`](database/schema.sql) é a referência oficial.
+- **Modelo de dados:** [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma) e suas migrações são a referência oficial.
 - **Tipos:** [`frontend/src/types/index.ts`](frontend/src/types/index.ts) define o formato dos objetos que a API deve devolver.
 - **Cliente HTTP:** [`frontend/src/services/http.ts`](frontend/src/services/http.ts) já está pronto e usa a variável `VITE_API_URL`.
-- **Protótipo anterior:** `backend/src` tem uma API Express da versão anterior, mantida como referência. Ela usa um schema antigo (`backend/migrations/001_init.sql`) e precisa ser alinhada ao novo modelo.
+- **Protótipo anterior:** `backend/src` tem uma API Express da versão anterior, mantida como referência. Ela foi escrita para um schema antigo (já removido; o banco agora é controlado pelas migrações do Prisma) e precisa ser alinhada ao novo modelo.
 
 ### Onde estão os mocks e o que substituir
 
@@ -384,26 +380,23 @@ psql -d hajimetech -f database/seed.sql
 | `frontend/src/mocks/*` | Dados de exemplo. Continuam úteis para gerar o seed |
 | `frontend/src/services/mockDb.ts` | "Banco" em memória. **Remover** depois da integração |
 | `frontend/src/services/*Service.ts` | Trocar o corpo de cada função (`simular(...)`) por `http.get/post/...`, **mantendo a mesma assinatura**. Nenhuma tela precisa mudar |
-| `frontend/src/contexts/AuthContext.tsx` | Trocar o login simulado por e-mail e senha (JWT) |
-| `frontend/src/pages/LoginPage.tsx` | Trocar o seletor de perfil por um formulário de login |
+| `frontend/src/contexts/AuthContext.tsx` | ✅ Já usa login real (JWT). Remover `definirUsuarioSessao` quando o mock sair |
 
 ### Como rodar o backend
 
-*A preencher pela equipe:*
+```bash
+cd database && docker compose up -d          # PostgreSQL com migrações + seed (usuários com senha "hajime123")
+cd ../backend && npm install && cp .env.example .env
+npm run dev                                  # http://localhost:3000/api
+```
 
-- Pré-requisitos:
-- Variáveis de ambiente (`backend/.env`):
-- Instalação:
-- Comando para iniciar:
-- Endereço local:
-- Testes:
-- Deploy (Render):
+Depois, no front: `cp .env.example .env` e `npm run dev`. Detalhes (variáveis, testes) em [`backend/README.md`](backend/README.md#8-como-rodar-o-backend).
 
 ---
 
 ## 11. 🚀 Próximos passos
 
-1. **Backend:** implementar os endpoints de [`backend/README.md`](backend/README.md) sobre o `schema.sql`, com autenticação JWT e permissões validadas no servidor.
+1. **Backend:** implementar os endpoints de [`backend/README.md`](backend/README.md) sobre o modelo do Prisma (`backend/prisma`), com autenticação JWT e permissões validadas no servidor.
 2. **Integração:** substituir a camada `services` por chamadas reais e remover o `mockDb.ts`.
 3. **Currículo das faixas Marrom e Preta:** quando a academia definir o conteúdo, marcar `conteudo_definido = true` na tabela `faixas` e cadastrar as técnicas pela tela Currículo.
 4. **Revisar o currículo de exemplo** (Branca a Roxa) com os professores de cada escola.

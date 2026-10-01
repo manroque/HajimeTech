@@ -1,11 +1,25 @@
 # Banco de dados do HajimeTech
 
-Esta pasta guarda o **modelo de dados oficial** do HajimeTech (PostgreSQL) e os **dados de exemplo** usados na demonstração. É a referência que o backend deve seguir.
+O **modelo de dados oficial** do HajimeTech (PostgreSQL) é versionado com **migrações do Prisma**, em `backend/prisma`. Esta pasta guarda os **dados de exemplo** usados na demonstração e o `docker-compose.yml` do banco de desenvolvimento.
 
 | Arquivo | Conteúdo | Pode editar? |
 |---|---|---|
-| `schema.sql` | Criação de tipos (enums), tabelas, chaves, índices e gatilhos. | Sim. É a fonte da verdade do modelo. Se mudar, atualize também `frontend/src/types/index.ts`. |
-| `seed.sql` | Dados de exemplo (2 escolas, 35 alunos, currículo, frequência de 1 ano etc.). | **Não.** É gerado automaticamente. |
+| `backend/prisma/schema.prisma` | Modelo: enums, tabelas, chaves, relações e índices. | Sim. É a fonte da verdade do modelo. Se mudar, gere uma migração e atualize também `frontend/src/types/index.ts`. |
+| `backend/prisma/migrations/` | SQL de cada versão do banco, aplicado em ordem. A `0_init` também tem a parte escrita à mão (CHECKs, índice por expressão, gatilhos, `pgcrypto`). | Só migrações novas. **Não altere** uma migração já aplicada. |
+| `database/seed.sql` | Dados de exemplo (2 escolas, 35 alunos, currículo, frequência de 1 ano etc.). | **Não.** É gerado automaticamente. |
+
+### Como alterar o modelo
+
+Na pasta `backend/`:
+
+```bash
+# 1. edite prisma/schema.prisma
+npm run db:migrate -- --name descricao-da-mudanca   # gera prisma/migrations/<data>_descricao... e aplica no banco local
+```
+
+- O que o Prisma não representa (CHECK, gatilho, índice por expressão, função): `npm run db:migrate -- --create-only --name ...`, edite o `migration.sql` gerado e rode `npm run db:migrate` de novo para aplicar.
+- `npm run db:status` mostra se o banco está em dia com as migrações.
+- Em produção, use `npm run db:deploy` (aplica só as migrações pendentes, sem apagar nada e sem seed).
 
 ### Como o `seed.sql` é gerado
 
@@ -19,8 +33,8 @@ npm run gerar-seed      # executa scripts/gerar-seed.ts → ../database/seed.sql
 - Para alterar os dados de exemplo, edite os arquivos em `frontend/src/mocks` e rode o comando novamente. Alterações feitas à mão no `seed.sql` serão perdidas.
 - As **datas são relativas** ao dia em que o seed é carregado (`CURRENT_DATE - n`). Assim o dashboard sempre mostra dados "recentes", não importa quando o banco foi criado.
 - Todo o seed roda dentro de uma transação (`BEGIN ... COMMIT`): ou entra tudo, ou nada.
-- O seed **não tem `ON CONFLICT`**: carregá-lo duas vezes no mesmo banco gera erro de chave duplicada. Recrie o banco antes (veja [Recriar do zero](#recriar-do-zero)).
-- Os usuários do seed **não têm senha** (`senha_hash` nulo). Quando o backend existir, ele deve definir as senhas (ex.: script de criação de senha inicial).
+- O seed é carregado por `backend/prisma/seed.js` (`npm run db:seed`), que **só roda se o banco estiver vazio** (sem faixas). Para recarregá-lo, recrie o banco (veja [Recriar do zero](#recriar-do-zero)).
+- Todos os usuários do seed entram com a senha `hajime123` (hash bcrypt gerado pelo `pgcrypto`). **Não use o seed em produção.**
 
 ---
 
@@ -28,37 +42,22 @@ npm run gerar-seed      # executa scripts/gerar-seed.ts → ../database/seed.sql
 
 ### Pré-requisitos
 
-- **PostgreSQL 14 ou superior** (usa `gen_random_uuid()` da extensão `pgcrypto`, criada pelo próprio `schema.sql`), **ou**
-- **Docker** (não precisa instalar o PostgreSQL).
+- **Docker** (recomendado; não precisa de Node nem de PostgreSQL instalados), **ou**
+- **PostgreSQL 14 ou superior** + **Node.js 20+** (para rodar o Prisma em `backend/`).
 
 Os arquivos estão em UTF-8. No Windows, se aparecerem acentos quebrados, rode antes `set PGCLIENTENCODING=UTF8` (cmd) ou `$env:PGCLIENTENCODING="UTF8"` (PowerShell).
 
-### Opção 1: PostgreSQL instalado (psql)
-
-Na pasta `database/`:
-
-```bash
-createdb hajimetech
-psql -d hajimetech -v ON_ERROR_STOP=1 -f schema.sql
-psql -d hajimetech -v ON_ERROR_STOP=1 -f seed.sql
-```
-
-Se precisar informar usuário/servidor: `psql -U postgres -h localhost -d hajimetech -f schema.sql`.
-
-Conferência rápida:
-
-```bash
-psql -d hajimetech -c "SELECT nome, (SELECT count(*) FROM alunos a WHERE a.escola_id = e.id) AS alunos FROM escolas e;"
-```
-
-### Opção 2: Docker Compose (recomendado)
-
-A pasta já tem um `docker-compose.yml`. Na primeira vez que o contêiner sobe, o PostgreSQL executa `schema.sql` e `seed.sql` sozinho.
+### Opção 1: Docker Compose (recomendado)
 
 ```bash
 cd database
 docker compose up -d
 ```
+
+Na **primeira vez**, o banco já sobe **populado**: depois que o PostgreSQL fica pronto, o serviço `migrate` (imagem de `migrate.Dockerfile`) aplica as migrações de `backend/prisma/migrations` e carrega o `seed.sql`, e então termina. Nas vezes seguintes, ele aplica só as migrações novas e ignora o seed.
+
+- Acompanhar: `docker compose logs migrate`.
+- Depois de alterar `backend/package.json` (ex.: atualizar o Prisma): `docker compose up -d --build`. Migrações e seed novos não exigem rebuild (são montados como volume).
 
 | Item | Valor |
 |---|---|
@@ -75,18 +74,19 @@ docker exec -it hajimetech-db psql -U hajimetech -d hajimetech
 
 Também dá para conectar pelo DBeaver, pelo pgAdmin ou pela extensão de PostgreSQL do VS Code, usando os dados da tabela acima.
 
-### Recriar do zero
+### Opção 2: PostgreSQL instalado
 
-Com psql:
+Crie o banco (`createdb hajimetech`), ajuste `DATABASE_URL` em `backend/.env` (ex.: `postgresql://postgres:postgres@localhost:5432/hajimetech`) e rode, em `backend/`, `npm run db:deploy` e `npm run db:seed`.
+
+Conferência rápida:
 
 ```bash
-dropdb --if-exists hajimetech   # ou, dentro do psql: DROP DATABASE hajimetech;
-createdb hajimetech
-psql -d hajimetech -v ON_ERROR_STOP=1 -f schema.sql
-psql -d hajimetech -v ON_ERROR_STOP=1 -f seed.sql
+psql -d hajimetech -c "SELECT nome, (SELECT count(*) FROM alunos a WHERE a.escola_id = e.id) AS alunos FROM escolas e;"
 ```
 
-Com Docker Compose (apaga o volume e roda os scripts de novo):
+### Recriar do zero
+
+Com Docker, apagando o volume (o `migrate` recria e popula tudo):
 
 ```bash
 cd database
@@ -94,7 +94,9 @@ docker compose down -v
 docker compose up -d
 ```
 
-Faça isso sempre que alterar o `schema.sql` ou regerar o `seed.sql`. As datas do seed são relativas ao dia em que ele foi carregado.
+Ou, na pasta `backend/`, `npm run db:reset` (apaga **todos** os dados, reaplica as migrações e carrega o seed; só para desenvolvimento).
+
+Faça isso sempre que regerar o `seed.sql`. As datas do seed são relativas ao dia em que ele foi carregado.
 
 ---
 
