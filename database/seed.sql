@@ -6,6 +6,7 @@
 -- Coerente com os mocks do front-end (mesmos IDs, nomes e quantidades).
 -- As faixas Marrom e Preta NÃO possuem categorias nem técnicas.
 -- Nomes, telefones e endereços são fictícios.
+-- Todos os usuários entram com a senha "hajime123". NÃO use este seed em produção.
 -- =============================================================================
 
 BEGIN;
@@ -27,11 +28,11 @@ INSERT INTO escolas (id, nome, cidade, endereco, telefone, responsavel, ativo) V
   ('00000001-0000-4000-8000-000000000002', 'Dojo Kizuna', 'Niterói/RJ', 'Av. Litorânea, 45, Icaraí', '(21) 2610-4545', 'Sensei Marcos Tanaka', true);
 
 -- Usuários (administrador e professores) ---------------------------------------
-INSERT INTO usuarios (id, escola_id, nome, email, perfil, aluno_id, ativo) VALUES
-  ('00000002-0000-4000-8000-000000000001', NULL, 'Coordenação HajimeTech', 'admin@hajimetech.local', 'administrador', NULL, true),
-  ('00000002-0000-4000-8000-000000000002', '00000001-0000-4000-8000-000000000001', 'Sensei Ana Paula Ribeiro', 'ana@hajime.local', 'professor', NULL, true),
-  ('00000002-0000-4000-8000-000000000003', '00000001-0000-4000-8000-000000000001', 'Prof. Rafael Souza', 'rafael@hajime.local', 'professor', NULL, true),
-  ('00000002-0000-4000-8000-000000000004', '00000001-0000-4000-8000-000000000002', 'Sensei Marcos Tanaka', 'marcos@kizuna.local', 'professor', NULL, true);
+INSERT INTO usuarios (id, escola_id, nome, email, senha_hash, perfil, aluno_id, ativo) VALUES
+  ('00000002-0000-4000-8000-000000000001', NULL, 'Coordenação HajimeTech', 'admin@hajimetech.local', crypt('hajime123', gen_salt('bf', 10)), 'administrador', NULL, true),
+  ('00000002-0000-4000-8000-000000000002', '00000001-0000-4000-8000-000000000001', 'Sensei Ana Paula Ribeiro', 'ana@hajime.local', crypt('hajime123', gen_salt('bf', 10)), 'professor', NULL, true),
+  ('00000002-0000-4000-8000-000000000003', '00000001-0000-4000-8000-000000000001', 'Prof. Rafael Souza', 'rafael@hajime.local', crypt('hajime123', gen_salt('bf', 10)), 'professor', NULL, true),
+  ('00000002-0000-4000-8000-000000000004', '00000001-0000-4000-8000-000000000002', 'Sensei Marcos Tanaka', 'marcos@kizuna.local', crypt('hajime123', gen_salt('bf', 10)), 'professor', NULL, true);
 
 -- Turmas e horários ------------------------------------------------------------
 INSERT INTO turmas (id, escola_id, nome, idade_minima, idade_maxima, professor_id, ativo) VALUES
@@ -92,9 +93,9 @@ INSERT INTO alunos (id, escola_id, turma_id, nome, data_nascimento, faixa_id, te
   ('00000005-0000-4000-8000-000000000035', '00000001-0000-4000-8000-000000000002', '00000003-0000-4000-8000-000000000005', 'Otávio Correia', '1987-03-03', 'azul', '(21) 97567-1012', '', '', CURRENT_DATE - 368, false);
 
 -- Usuários com perfil aluno (dependem de alunos) -------------------------------
-INSERT INTO usuarios (id, escola_id, nome, email, perfil, aluno_id, ativo) VALUES
-  ('00000002-0000-4000-8000-000000000005', '00000001-0000-4000-8000-000000000001', 'Lucas Oliveira', 'lucas@aluno.local', 'aluno', '00000005-0000-4000-8000-000000000001', true),
-  ('00000002-0000-4000-8000-000000000006', '00000001-0000-4000-8000-000000000002', 'Yuki Tanaka', 'yuki@aluno.local', 'aluno', '00000005-0000-4000-8000-000000000024', true);
+INSERT INTO usuarios (id, escola_id, nome, email, senha_hash, perfil, aluno_id, ativo) VALUES
+  ('00000002-0000-4000-8000-000000000005', '00000001-0000-4000-8000-000000000001', 'Lucas Oliveira', 'lucas@aluno.local', crypt('hajime123', gen_salt('bf', 10)), 'aluno', '00000005-0000-4000-8000-000000000001', true),
+  ('00000002-0000-4000-8000-000000000006', '00000001-0000-4000-8000-000000000002', 'Yuki Tanaka', 'yuki@aluno.local', crypt('hajime123', gen_salt('bf', 10)), 'aluno', '00000005-0000-4000-8000-000000000024', true);
 
 -- Currículo: categorias e técnicas (Branca a Roxa) -----------------------------
 INSERT INTO categorias_curriculo (id, escola_id, faixa_id, nome, descricao, ordem, ativo) VALUES

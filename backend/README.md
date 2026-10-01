@@ -604,9 +604,10 @@ Copie `backend/.env.example` para `backend/.env`:
 cd backend
 npm install
 cp .env.example .env
-npm run senhas:demo   # define a senha "hajime123" para os usuários do seed
 npm run dev
 ```
+
+Os usuários do `database/seed.sql` já vêm com a senha `hajime123` (hash bcrypt gerado pelo `pgcrypto`).
 
 ### Comandos
 
@@ -614,7 +615,6 @@ npm run dev
 |---|---|
 | `npm run dev` | Rodar em desenvolvimento (reinicia ao salvar) |
 | `npm start` | Rodar em produção |
-| `npm run senhas:demo` | Define a mesma senha (padrão `hajime123`, ou `SENHA_DEMO=...`) para todos os usuários do banco. Só desenvolvimento |
 | `npm test` | Testes (Jest + Supertest) |
 
 ### Autenticação implementada

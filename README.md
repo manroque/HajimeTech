@@ -389,9 +389,8 @@ psql -d hajimetech -f database/seed.sql
 ### Como rodar o backend
 
 ```bash
-cd database && docker compose up -d          # PostgreSQL com schema + seed
+cd database && docker compose up -d          # PostgreSQL com schema + seed (usuários com senha "hajime123")
 cd ../backend && npm install && cp .env.example .env
-npm run senhas:demo                          # senha "hajime123" para os usuários do seed
 npm run dev                                  # http://localhost:3000/api
 ```
 

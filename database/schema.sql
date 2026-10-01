@@ -70,7 +70,7 @@ CREATE TABLE usuarios (
   escola_id     UUID REFERENCES escolas(id),             -- NULL = administrador global
   nome          VARCHAR(150)   NOT NULL,
   email         VARCHAR(180)   NOT NULL,
-  senha_hash    VARCHAR(255),                            -- preenchido pelo backend (bcrypt/argon2)
+  senha_hash    VARCHAR(255),                            -- hash bcrypt; o seed de demonstração usa pgcrypto (crypt/gen_salt)
   perfil        perfil_usuario NOT NULL,
   aluno_id      UUID,                                    -- FK adicionada após criar `alunos`
   ativo         BOOLEAN        NOT NULL DEFAULT true,
