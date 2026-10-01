@@ -1,0 +1,4 @@
+# O contexto do build é a raiz do repositório; só os package*.json do backend são usados.
+*
+!backend/package.json
+!backend/package-lock.json

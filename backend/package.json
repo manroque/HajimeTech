@@ -6,7 +6,11 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "senhas:demo": "node scripts/definir-senhas-demo.js"
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset && prisma db seed",
+    "db:seed": "prisma db seed",
+    "db:status": "prisma migrate status"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -19,6 +23,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "prisma": "^7.10.0",
     "supertest": "^7.0.0"
   },
   "jest": {

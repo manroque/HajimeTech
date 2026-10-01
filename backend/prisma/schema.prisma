@@ -1,0 +1,440 @@
+// =============================================================================
+// HajimeTech: esquema do banco de dados (PostgreSQL 14+)
+// =============================================================================
+// Fonte da verdade do modelo. Para alterar: edite este arquivo e rode
+// `npm run db:migrate -- --name <descricao>` (gera a migração em prisma/migrations).
+//
+// Convenções:
+//   * Chaves primárias UUID (gen_random_uuid), exceto `faixas`, tabela global
+//     identificada por um slug legível ('branca', 'azul', ...).
+//   * Toda tabela de dados tem `escola_id` → isolamento por escola (multi-escola).
+//     O backend DEVE filtrar todas as consultas por escola_id.
+//   * Soft delete: coluna `ativo`. Alunos, técnicas, categorias, turmas,
+//     escolas e premiações nunca são apagados fisicamente.
+//   * `criado_em` / `atualizado_em` em todas as tabelas; `atualizado_em` é
+//     mantido pelo gatilho `definir_atualizado_em()`.
+//   * Chaves estrangeiras compostas (id, escola_id) garantem que um registro
+//     só referencie dados da MESMA escola.
+//   * Modelos em PascalCase e campos em camelCase; no banco, snake_case (@@map/@map).
+//
+// O que o Prisma não representa (CHECKs, índice por expressão, gatilhos e a
+// extensão pgcrypto) está escrito à mão em prisma/migrations/0_init/migration.sql.
+// Mudanças desse tipo: `npm run db:migrate -- --create-only` e edite o SQL.
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Tipos enumerados
+// -----------------------------------------------------------------------------
+
+enum PerfilUsuario {
+  administrador
+  professor
+  aluno
+
+  @@map("perfil_usuario")
+}
+
+enum NivelTecnica {
+  iniciante
+  em_desenvolvimento
+  domina
+
+  @@map("nivel_tecnica")
+}
+
+enum TipoPremiacao {
+  destaque_mes
+  frequencia
+  campeonato
+  evolucao
+  outro
+
+  @@map("tipo_premiacao")
+}
+
+// -----------------------------------------------------------------------------
+// escolas
+// -----------------------------------------------------------------------------
+
+model Escola {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome         String   @db.VarChar(150)
+  cidade       String   @default("") @db.VarChar(120)
+  endereco     String   @default("") @db.VarChar(200)
+  telefone     String   @default("") @db.VarChar(30)
+  responsavel  String   @default("") @db.VarChar(150)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  usuarios           Usuario[]
+  turmas             Turma[]
+  alunos             Aluno[]
+  frequencias        Frequencia[]
+  graduacoes         Graduacao[]
+  categorias         CategoriaCurriculo[]
+  tecnicas           Tecnica[]
+  tecnicasAluno      TecnicaAluno[]
+  criteriosAvaliacao CriterioAvaliacao[]
+  avaliacoes         Avaliacao[]
+  premiacoes         Premiacao[]
+  premiacoesAluno    PremiacaoAluno[]
+
+  @@map("escolas")
+}
+
+// -----------------------------------------------------------------------------
+// faixas (tabela global com a progressão Branca → Preta)
+// CHECK: ordem BETWEEN 1 AND 20
+// -----------------------------------------------------------------------------
+
+model Faixa {
+  id               String   @id @db.VarChar(20)
+  nome             String   @unique @db.VarChar(40)
+  ordem            Int      @unique @db.SmallInt
+  cor              String   @db.Char(7) // ex.: #1D4ED8
+  corTexto         String   @map("cor_texto") @db.Char(7)
+  conteudoDefinido Boolean  @default(true) @map("conteudo_definido") // false para Marrom e Preta
+  criadoEm         DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  alunos               Aluno[]
+  categorias           CategoriaCurriculo[]
+  graduacoesAnteriores Graduacao[]          @relation("GraduacaoFaixaAnterior")
+  graduacoesNovas      Graduacao[]          @relation("GraduacaoNovaFaixa")
+
+  @@map("faixas")
+}
+
+// -----------------------------------------------------------------------------
+// usuarios
+// CHECK: perfil = 'administrador' OR escola_id IS NOT NULL
+// CHECK: (perfil = 'aluno') = (aluno_id IS NOT NULL)
+// -----------------------------------------------------------------------------
+
+model Usuario {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String?       @map("escola_id") @db.Uuid // NULL = administrador global
+  nome         String        @db.VarChar(150)
+  email        String        @unique(map: "uq_usuarios_email") @db.VarChar(180)
+  senhaHash    String?       @map("senha_hash") @db.VarChar(255) // hash bcrypt
+  perfil       PerfilUsuario
+  alunoId      String?       @map("aluno_id") @db.Uuid
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime      @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola     Escola?     @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aluno      Aluno?      @relation(fields: [alunoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuarios_aluno")
+  turmas     Turma[]
+  avaliacoes Avaliacao[]
+
+  @@index([escolaId], map: "idx_usuarios_escola")
+  @@map("usuarios")
+}
+
+// -----------------------------------------------------------------------------
+// turmas e horarios_turma
+// CHECK: idade_minima >= 0; idade_maxima IS NULL OR idade_maxima >= idade_minima
+// -----------------------------------------------------------------------------
+
+model Turma {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  nome         String   @db.VarChar(100)
+  idadeMinima  Int      @map("idade_minima") @db.SmallInt
+  idadeMaxima  Int?     @map("idade_maxima") @db.SmallInt // NULL = sem limite
+  professorId  String?  @map("professor_id") @db.Uuid
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola      Escola         @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  professor   Usuario?       @relation(fields: [professorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  horarios    HorarioTurma[]
+  alunos      Aluno[]
+  frequencias Frequencia[]
+
+  @@unique([id, escolaId], map: "uq_turmas_id_escola")
+  @@index([escolaId], map: "idx_turmas_escola", where: raw("ativo"))
+  @@map("turmas")
+}
+
+// CHECK: dia_semana BETWEEN 0 AND 6 (0 = domingo); hora_fim > hora_inicio
+model HorarioTurma {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  turmaId      String   @map("turma_id") @db.Uuid
+  diaSemana    Int      @map("dia_semana") @db.SmallInt
+  horaInicio   DateTime @map("hora_inicio") @db.Time(6)
+  horaFim      DateTime @map("hora_fim") @db.Time(6)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([turmaId], map: "idx_horarios_turma")
+  @@map("horarios_turma")
+}
+
+// -----------------------------------------------------------------------------
+// alunos
+// Índice por expressão (escola_id, lower(nome)) criado na migração.
+// -----------------------------------------------------------------------------
+
+model Aluno {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId       String    @map("escola_id") @db.Uuid
+  turmaId        String?   @map("turma_id") @db.Uuid
+  nome           String    @db.VarChar(150)
+  dataNascimento DateTime? @map("data_nascimento") @db.Date
+  faixaId        String    @default("branca") @map("faixa_id") @db.VarChar(20)
+  telefone       String    @default("") @db.VarChar(30)
+  responsavel    String    @default("") @db.VarChar(150)
+  observacoes    String    @default("")
+  dataIngresso   DateTime  @default(dbgenerated("CURRENT_DATE")) @map("data_ingresso") @db.Date
+  ativo          Boolean   @default(true) // "Excluir" = ativo := false
+  criadoEm       DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime  @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola      Escola           @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  faixa       Faixa            @relation(fields: [faixaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  turma       Turma?           @relation(fields: [turmaId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_alunos_turma")
+  usuarios    Usuario[]
+  frequencias Frequencia[]
+  graduacoes  Graduacao[]
+  tecnicas    TecnicaAluno[]
+  avaliacoes  Avaliacao[]
+  premiacoes  PremiacaoAluno[]
+
+  @@unique([id, escolaId], map: "uq_alunos_id_escola")
+  @@index([escolaId, ativo], map: "idx_alunos_escola_ativo")
+  @@index([escolaId, turmaId], map: "idx_alunos_escola_turma")
+  @@map("alunos")
+}
+
+// -----------------------------------------------------------------------------
+// frequencias (uma linha por aluno por data → gravação por upsert)
+// -----------------------------------------------------------------------------
+
+model Frequencia {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  alunoId      String   @map("aluno_id") @db.Uuid
+  turmaId      String   @map("turma_id") @db.Uuid
+  data         DateTime @db.Date
+  presente     Boolean
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola Escola @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aluno  Aluno  @relation(fields: [alunoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_frequencias_aluno")
+  turma  Turma  @relation(fields: [turmaId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_frequencias_turma")
+
+  @@unique([alunoId, data], map: "uq_frequencia_aluno_data")
+  @@index([escolaId, data], map: "idx_frequencias_escola_data")
+  @@index([turmaId, data], map: "idx_frequencias_turma_data")
+  @@map("frequencias")
+}
+
+// -----------------------------------------------------------------------------
+// graduacoes
+// CHECK: faixa_anterior_id <> nova_faixa_id
+// Regra: ao inserir, o backend atualiza alunos.faixa_id na mesma transação.
+// -----------------------------------------------------------------------------
+
+model Graduacao {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId        String   @map("escola_id") @db.Uuid
+  alunoId         String   @map("aluno_id") @db.Uuid
+  faixaAnteriorId String   @map("faixa_anterior_id") @db.VarChar(20)
+  novaFaixaId     String   @map("nova_faixa_id") @db.VarChar(20)
+  data            DateTime @db.Date
+  observacoes     String   @default("")
+  criadoEm        DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola        Escola @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aluno         Aluno  @relation(fields: [alunoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_graduacoes_aluno")
+  faixaAnterior Faixa  @relation("GraduacaoFaixaAnterior", fields: [faixaAnteriorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  novaFaixa     Faixa  @relation("GraduacaoNovaFaixa", fields: [novaFaixaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([alunoId, data(sort: Desc)], map: "idx_graduacoes_aluno")
+  @@index([escolaId, data(sort: Desc)], map: "idx_graduacoes_escola_data")
+  @@map("graduacoes")
+}
+
+// -----------------------------------------------------------------------------
+// categorias_curriculo e tecnicas
+// CHECK: ordem >= 1 (nas duas tabelas)
+// Gatilho trg_categorias_faixa_definida: recusa categorias em faixas sem
+// conteúdo definido (Marrom e Preta).
+// -----------------------------------------------------------------------------
+
+model CategoriaCurriculo {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  faixaId      String   @map("faixa_id") @db.VarChar(20)
+  nome         String   @db.VarChar(150)
+  descricao    String   @default("")
+  ordem        Int      @default(1)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola   Escola    @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  faixa    Faixa     @relation(fields: [faixaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnicas Tecnica[]
+
+  @@unique([id, escolaId], map: "uq_categorias_id_escola")
+  @@index([escolaId, faixaId, ordem], map: "idx_categorias_escola_faixa")
+  @@map("categorias_curriculo")
+}
+
+model Tecnica {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  categoriaId  String   @map("categoria_id") @db.Uuid
+  nome         String   @db.VarChar(150)
+  descricao    String   @default("")
+  ordem        Int      @default(1)
+  ativo        Boolean  @default(true) // técnicas são desativadas, nunca apagadas
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola    Escola             @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  categoria CategoriaCurriculo @relation(fields: [categoriaId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_tecnicas_categoria")
+  alunos    TecnicaAluno[]
+
+  @@unique([id, escolaId], map: "uq_tecnicas_id_escola")
+  @@index([categoriaId, ordem], map: "idx_tecnicas_categoria")
+  @@map("tecnicas")
+}
+
+// -----------------------------------------------------------------------------
+// tecnicas_aluno (acompanhamento técnico; um registro por aluno e técnica)
+// -----------------------------------------------------------------------------
+
+model TecnicaAluno {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String       @map("escola_id") @db.Uuid
+  alunoId      String       @map("aluno_id") @db.Uuid
+  tecnicaId    String       @map("tecnica_id") @db.Uuid
+  nivel        NivelTecnica @default(iniciante)
+  observacoes  String       @default("")
+  criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola  Escola  @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aluno   Aluno   @relation(fields: [alunoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_tecnicas_aluno_aluno")
+  tecnica Tecnica @relation(fields: [tecnicaId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_tecnicas_aluno_tecnica")
+
+  @@unique([alunoId, tecnicaId], map: "uq_tecnica_aluno")
+  @@index([alunoId], map: "idx_tecnicas_aluno_aluno")
+  @@map("tecnicas_aluno")
+}
+
+// -----------------------------------------------------------------------------
+// criterios_avaliacao, avaliacoes e avaliacao_notas
+// -----------------------------------------------------------------------------
+
+model CriterioAvaliacao {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  nome         String   @db.VarChar(100)
+  descricao    String   @default("")
+  ordem        Int      @default(1)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola Escola          @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notas  AvaliacaoNota[]
+
+  @@unique([id, escolaId], map: "uq_criterios_id_escola")
+  @@map("criterios_avaliacao")
+}
+
+model Avaliacao {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  alunoId      String   @map("aluno_id") @db.Uuid
+  avaliadorId  String?  @map("avaliador_id") @db.Uuid
+  data         DateTime @db.Date
+  observacoes  String   @default("")
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola    Escola          @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aluno     Aluno           @relation(fields: [alunoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_avaliacoes_aluno")
+  avaliador Usuario?        @relation(fields: [avaliadorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notas     AvaliacaoNota[]
+
+  @@unique([id, escolaId], map: "uq_avaliacoes_id_escola")
+  @@index([alunoId, data], map: "idx_avaliacoes_aluno")
+  @@map("avaliacoes")
+}
+
+// Uma nota (1 a 5) por critério em cada avaliação. CHECK: nota BETWEEN 1 AND 5
+model AvaliacaoNota {
+  avaliacaoId  String   @map("avaliacao_id") @db.Uuid
+  criterioId   String   @map("criterio_id") @db.Uuid
+  nota         Int      @db.SmallInt
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  avaliacao Avaliacao         @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  criterio  CriterioAvaliacao @relation(fields: [criterioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([avaliacaoId, criterioId])
+  @@map("avaliacao_notas")
+}
+
+// -----------------------------------------------------------------------------
+// premiacoes e premiacoes_aluno
+// -----------------------------------------------------------------------------
+
+model Premiacao {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String        @map("escola_id") @db.Uuid
+  nome         String        @db.VarChar(120)
+  descricao    String        @default("")
+  tipo         TipoPremiacao @default(outro)
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime      @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola     Escola           @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  concessoes PremiacaoAluno[]
+
+  @@unique([id, escolaId], map: "uq_premiacoes_id_escola")
+  @@map("premiacoes")
+}
+
+model PremiacaoAluno {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id") @db.Uuid
+  premiacaoId  String   @map("premiacao_id") @db.Uuid
+  alunoId      String   @map("aluno_id") @db.Uuid
+  data         DateTime @db.Date
+  descricao    String   @default("")
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  escola    Escola    @relation(fields: [escolaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  premiacao Premiacao @relation(fields: [premiacaoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_premiacoes_aluno_premiacao")
+  aluno     Aluno     @relation(fields: [alunoId, escolaId], references: [id, escolaId], onDelete: NoAction, onUpdate: NoAction, map: "fk_premiacoes_aluno_aluno")
+
+  @@index([alunoId], map: "idx_premiacoes_aluno_aluno")
+  @@index([escolaId, data(sort: Desc)], map: "idx_premiacoes_aluno_escola")
+  @@map("premiacoes_aluno")
+}

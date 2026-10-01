@@ -4,7 +4,11 @@
 # Parar:      docker compose down
 # Recriar do zero (apaga os dados): docker compose down -v && docker compose up -d
 #
-# Na primeira vez, o PostgreSQL executa schema.sql e seed.sql automaticamente.
+# Ao subir, o serviço `migrate` aplica as migrações do Prisma (backend/prisma/migrations)
+# e carrega o seed.sql se o banco estiver vazio. Ou seja: na primeira vez o banco já
+# vem populado; nas seguintes, só as migrações novas são aplicadas.
+#   Acompanhar:  docker compose logs migrate
+#   Depois de mudar backend/package.json: docker compose up -d --build
 # Porta 5433 no computador, para não conflitar com um PostgreSQL já instalado na 5432.
 # Credenciais apenas para desenvolvimento local.
 
@@ -24,13 +28,27 @@ services:
       - "5433:5432"
     volumes:
       - dados:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hajimetech -d hajimetech"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: database/migrate.Dockerfile
+    container_name: hajimetech-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://hajimetech:hajimetech@db:5432/hajimetech
+    volumes:
+      - ../backend/prisma:/app/backend/prisma:ro
+      - ../backend/prisma.config.js:/app/backend/prisma.config.js:ro
+      - ./seed.sql:/app/database/seed.sql:ro
+    restart: "no"
 
 volumes:
   dados:
