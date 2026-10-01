@@ -20,7 +20,7 @@ O sistema suporta **mais de uma academia/escola de judô**. Cada aluno pertence 
 |---|---|
 | Front-end (`/frontend`) | Completo e navegável, com **dados mockados** |
 | Banco de dados (`/database`) | Pronto: `schema.sql`, `seed.sql` e DER |
-| Backend (`/backend`) | Não implementado nesta entrega; há contratos de API e um ponto de partida para a equipe |
+| Backend (`/backend`) | Login (e-mail e senha, JWT) implementado; demais endpoints documentados como contrato para a equipe |
 
 ---
 
@@ -182,7 +182,7 @@ Novidades desta versão: indicadores do dashboard em formato de tabela (com comp
 | **Professor** | Gerencia alunos, turmas, frequência, graduações, avaliações, premiações e o currículo **da sua escola** |
 | **Aluno** | Somente leitura: acompanha a própria evolução ("Minha evolução") e consulta o currículo |
 
-No front, o login é **simulado**: você escolhe o perfil na tela de entrada. A matriz completa de permissões está em [`REQUISITOS.md`](REQUISITOS.md).
+O login usa **e-mail e senha** validados pela API (contas de demonstração com a senha `hajime123`, listadas na tela de entrada). A matriz completa de permissões está em [`REQUISITOS.md`](REQUISITOS.md).
 
 ---
 
@@ -285,7 +285,7 @@ HajimeTech/
     └── src/ ...            ← protótipo Express anterior (referência, não alinhado ao novo schema)
 ```
 
-**Telas:** Login (perfil simulado) · Escolas · Painel · Alunos · Perfil do aluno · Turmas · Frequência · Graduações · Acompanhamento técnico · Currículo · Avaliações · Premiações · Relatórios · Minha evolução (aluno).
+**Telas:** Login (e-mail e senha) · Escolas · Painel · Alunos · Perfil do aluno · Turmas · Frequência · Graduações · Acompanhamento técnico · Currículo · Avaliações · Premiações · Relatórios · Minha evolução (aluno).
 
 ---
 
@@ -384,20 +384,18 @@ psql -d hajimetech -f database/seed.sql
 | `frontend/src/mocks/*` | Dados de exemplo. Continuam úteis para gerar o seed |
 | `frontend/src/services/mockDb.ts` | "Banco" em memória. **Remover** depois da integração |
 | `frontend/src/services/*Service.ts` | Trocar o corpo de cada função (`simular(...)`) por `http.get/post/...`, **mantendo a mesma assinatura**. Nenhuma tela precisa mudar |
-| `frontend/src/contexts/AuthContext.tsx` | Trocar o login simulado por e-mail e senha (JWT) |
-| `frontend/src/pages/LoginPage.tsx` | Trocar o seletor de perfil por um formulário de login |
+| `frontend/src/contexts/AuthContext.tsx` | ✅ Já usa login real (JWT). Remover `definirUsuarioSessao` quando o mock sair |
 
 ### Como rodar o backend
 
-*A preencher pela equipe:*
+```bash
+cd database && docker compose up -d          # PostgreSQL com schema + seed
+cd ../backend && npm install && cp .env.example .env
+npm run senhas:demo                          # senha "hajime123" para os usuários do seed
+npm run dev                                  # http://localhost:3000/api
+```
 
-- Pré-requisitos:
-- Variáveis de ambiente (`backend/.env`):
-- Instalação:
-- Comando para iniciar:
-- Endereço local:
-- Testes:
-- Deploy (Render):
+Depois, no front: `cp .env.example .env` e `npm run dev`. Detalhes (variáveis, testes) em [`backend/README.md`](backend/README.md#8-como-rodar-o-backend).
 
 ---
 

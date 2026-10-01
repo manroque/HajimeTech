@@ -1,7 +1,6 @@
 # Backend do HajimeTech
 
-> **Status: o backend NÃO foi implementado nesta entrega.**
-> O front-end funciona 100% com dados simulados. Este documento é o **contrato** que a API real deve cumprir para substituir a simulação sem alterar nenhuma tela.
+> **Status:** a **autenticação** (`POST /api/auth/login` e `GET /api/auth/me`, sobre `database/schema.sql`) está implementada e integrada ao front. Os demais endpoints ainda **não** foram implementados: o restante do front funciona com dados simulados. Este documento é o **contrato** que a API real deve cumprir para substituir a simulação sem alterar nenhuma tela.
 
 ## Sumário
 
@@ -12,7 +11,7 @@
 5. [Formato de erro](#5-formato-de-erro)
 6. [Regras de negócio que a API deve garantir](#6-regras-de-negócio-que-a-api-deve-garantir)
 7. [Endpoints](#7-endpoints)
-8. [Como rodar o backend](#8-como-rodar-o-backend) *(a preencher pela equipe)*
+8. [Como rodar o backend](#8-como-rodar-o-backend)
 
 ---
 
@@ -581,22 +580,20 @@ Resposta:
 
 ## 8. Como rodar o backend
 
-> **A preencher pela equipe** quando a implementação existir. Os itens abaixo são um roteiro.
-
 ### Pré-requisitos
 
-- *A preencher pela equipe.* Ex.: Node.js (versão), npm/pnpm, PostgreSQL 14+ ou Docker.
-- Banco criado conforme `database/README.md`.
+- Node.js 20+ e npm.
+- Banco criado conforme `database/README.md` (o jeito mais simples: `cd database && docker compose up -d`).
 
 ### Variáveis de ambiente
 
-*A preencher pela equipe.* Sugestão de `backend/.env.example`:
+Copie `backend/.env.example` para `backend/.env`:
 
 | Variável | Exemplo | Descrição |
 |---|---|---|
 | `PORT` | `3000` | Porta da API |
 | `DATABASE_URL` | `postgresql://hajimetech:hajimetech@localhost:5433/hajimetech` | Conexão com o PostgreSQL (valor do `database/docker-compose.yml`) |
-| `JWT_SECRET` | *(segredo forte)* | Assinatura dos tokens |
+| `JWT_SECRET` | *(segredo forte)* | Assinatura dos tokens. **Obrigatório** |
 | `JWT_EXPIRES_IN` | `8h` | Validade do token |
 | `CORS_ORIGIN` | `http://localhost:5173` | Origem permitida (front em desenvolvimento) |
 | `NODE_ENV` | `development` | Ambiente |
@@ -604,22 +601,31 @@ Resposta:
 ### Instalação
 
 ```bash
-# A preencher pela equipe
 cd backend
 npm install
+cp .env.example .env
+npm run senhas:demo   # define a senha "hajime123" para os usuários do seed
+npm run dev
 ```
 
 ### Comandos
 
 | Comando | O que faz |
 |---|---|
-| *A preencher* | Rodar em desenvolvimento |
-| *A preencher* | Rodar em produção |
-| *A preencher* | Criar senhas iniciais dos usuários de demonstração |
+| `npm run dev` | Rodar em desenvolvimento (reinicia ao salvar) |
+| `npm start` | Rodar em produção |
+| `npm run senhas:demo` | Define a mesma senha (padrão `hajime123`, ou `SENHA_DEMO=...`) para todos os usuários do banco. Só desenvolvimento |
+| `npm test` | Testes (Jest + Supertest) |
+
+### Autenticação implementada
+
+- `src/routes/auth.js`: `POST /api/auth/login` (bcrypt + JWT com `sub`, `perfil`, `escolaId`, `alunoId`) e `GET /api/auth/me` (relê o usuário e recusa inativos).
+- `src/middleware/auth.js`: `autenticar` (exige `Authorization: Bearer`, define `req.usuario`) e `exigirPerfil(...perfis)`. Use-os nas novas rotas `/api/escolas/:escolaId/...`; as rotas do protótipo antigo ainda não os usam.
+- No front, `AuthContext` guarda `{ token, usuario }` no `sessionStorage`, envia o token por `services/http.ts`, valida a sessão com `/auth/me` ao recarregar e volta ao login em qualquer `401`.
 
 ### Testes
 
-*A preencher pela equipe:* framework, como rodar, cobertura mínima. Sugestão: testes de integração por endpoint cobrindo `403` por perfil, isolamento entre as duas escolas do seed e as regras da [seção 6](#6-regras-de-negócio-que-a-api-deve-garantir).
+`npm test` roda Jest + Supertest. `tests/auth.test.js` cobre o login sem precisar de banco (o `pool` é simulado). Próximos passos sugeridos: testes de integração por endpoint cobrindo `403` por perfil, isolamento entre as duas escolas do seed e as regras da [seção 6](#6-regras-de-negócio-que-a-api-deve-garantir).
 
 ### Deploy
 

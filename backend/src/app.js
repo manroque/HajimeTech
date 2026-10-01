@@ -3,6 +3,7 @@ import cors from 'cors';
 
 import { tenant } from './middleware/tenant.js';
 
+import auth from './routes/auth.js';
 import alunos from './routes/alunos.js';
 import turmas from './routes/turmas.js';
 import frequencias from './routes/frequencias.js';
@@ -13,7 +14,11 @@ import dashboard from './routes/dashboard.js';
 
 const app = express();
 
-app.use(cors({ origin: true }));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+  })
+);
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
@@ -22,6 +27,9 @@ app.get('/api/health', (req, res) => {
     projeto: 'HajimeTech'
   });
 });
+
+// Login e sessão (não passam pelo middleware legado `tenant`)
+app.use('/api/auth', auth);
 
 app.use('/api', tenant);
 
@@ -38,7 +46,7 @@ app.use((err, req, res, next) => {
   console.error(err);
 
   res.status(500).json({
-    error: 'Erro interno',
+    erro: 'Erro interno. Tente novamente.',
     detail:
       process.env.NODE_ENV === 'development'
         ? err.message
