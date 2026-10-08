@@ -47,10 +47,15 @@ function inserir(tabela: string, colunas: string[], linhas: Valor[][], lote = 40
   return partes.join('\n') + '\n';
 }
 
+/** Senha de todos os usuários de demonstração (apenas desenvolvimento). */
+const SENHA_DEMO = 'hajime123';
+/** Hash bcrypt gerado no próprio Postgres (pgcrypto), compatível com o bcryptjs do backend. */
+const senhaHash: Valor = { sql: `crypt('${SENHA_DEMO}', gen_salt('bf', 10))` };
+
 const professoresEAdmin = banco.usuarios.filter((u) => u.perfil !== 'aluno');
 const usuariosAluno = banco.usuarios.filter((u) => u.perfil === 'aluno');
-const colunasUsuario = ['id', 'escola_id', 'nome', 'email', 'perfil', 'aluno_id', 'ativo'];
-const linhaUsuario = (u: (typeof banco.usuarios)[number]): Valor[] => [u.id, u.escolaId, u.nome, u.email, u.perfil, u.alunoId, u.ativo];
+const colunasUsuario = ['id', 'escola_id', 'nome', 'email', 'senha_hash', 'perfil', 'aluno_id', 'ativo'];
+const linhaUsuario = (u: (typeof banco.usuarios)[number]): Valor[] => [u.id, u.escolaId, u.nome, u.email, senhaHash, u.perfil, u.alunoId, u.ativo];
 
 const sql = `-- =============================================================================
 -- HajimeTech: dados de exemplo
@@ -60,6 +65,7 @@ const sql = `-- ================================================================
 -- Coerente com os mocks do front-end (mesmos IDs, nomes e quantidades).
 -- As faixas Marrom e Preta NÃO possuem categorias nem técnicas.
 -- Nomes, telefones e endereços são fictícios.
+-- Todos os usuários entram com a senha "${SENHA_DEMO}". NÃO use este seed em produção.
 -- =============================================================================
 
 BEGIN;

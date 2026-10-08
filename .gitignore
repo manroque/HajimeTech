@@ -56,3 +56,9 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# ==============================
+# Prisma Client gerado
+# ==============================
+
+backend/src/generated/
