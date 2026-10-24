@@ -107,33 +107,6 @@
   color: var(--vermelho-600);
 }
 
-.menuRodape {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  font-size: var(--texto-xs);
-  color: #9fb3e6;
-  border-top: 1px solid rgb(255 255 255 / 8%);
-}
-
-.restaurar {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid rgb(255 255 255 / 20%);
-  background: transparent;
-  color: #dbe4ff;
-  font-size: var(--texto-xs);
-  padding: 4px 8px;
-  border-radius: var(--raio-sm);
-}
-
-.restaurar:hover {
-  background: rgb(255 255 255 / 10%);
-}
-
 /* ----- Área principal ----- */
 .principal {
   flex: 1;

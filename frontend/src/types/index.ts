@@ -1,9 +1,9 @@
 /**
  * Tipos de domínio do HajimeTech.
  *
- * Espelham as tabelas de /database/schema.sql (nomes em camelCase no front,
- * snake_case no banco). Ao integrar o backend, a API deve devolver objetos
- * com este formato, ou os services devem fazer a conversão.
+ * Espelham as tabelas de backend/prisma/schema.prisma (nomes em camelCase no
+ * front, snake_case no banco). A API devolve objetos neste formato; a conversão
+ * fica em backend/src/lib/mapeadores.js.
  */
 
 export type ID = string;

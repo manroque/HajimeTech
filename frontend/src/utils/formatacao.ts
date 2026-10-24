@@ -2,7 +2,7 @@ import { FAIXAS } from '../mocks/faixas';
 import { deISO, hojeLocal, paraISO } from '../mocks/utils';
 import type { DiaSemana, Faixa, FaixaId, NivelTecnica, Perfil, TipoPremiacao, Turma } from '../types';
 
-export { paraISO, hojeLocal };
+export { paraISO, hojeLocal, deISO };
 
 /**
  * Faixas são dados de referência fixos (também existem na tabela `faixas`),

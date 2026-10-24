@@ -6,8 +6,7 @@ import { useEscolaAtual } from '../contexts/EscolaContext';
 import { useToast } from '../contexts/ToastContext';
 import { useCarregar } from '../hooks/useCarregar';
 import { frequenciaService, turmasService } from '../services';
-import { formatarDataExtensa, hojeISO } from '../utils/formatacao';
-import { deISO } from '../mocks/utils';
+import { deISO, formatarDataExtensa, hojeISO } from '../utils/formatacao';
 import s from './FrequenciaPage.module.css';
 
 export function FrequenciaPage() {

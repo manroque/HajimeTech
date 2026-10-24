@@ -13,7 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useEscolaAtual } from '../contexts/EscolaContext';
 import { useToast } from '../contexts/ToastContext';
 import { useCarregar } from '../hooks/useCarregar';
-import { curriculoService } from '../services';
+import { curriculoService, moverNaLista } from '../services';
 import type { CategoriaComTecnicas, FaixaId, Tecnica } from '../types';
 import { FAIXAS, faixaPorId } from '../utils/formatacao';
 import s from './CurriculoPage.module.css';
@@ -55,6 +55,18 @@ export function CurriculoPage() {
     } finally {
       setOcupado(false);
     }
+  }
+
+  /** Sobe ou desce uma categoria: envia à API a ordem completa da faixa. */
+  function moverCategoria(id: string, direcao: 'cima' | 'baixo') {
+    const ids = moverNaLista((categorias ?? []).map((c) => c.id), id, direcao);
+    if (ids) void executar(() => curriculoService.reordenarCategorias(escola.id, ids));
+  }
+
+  /** Sobe ou desce uma técnica dentro da categoria (só as ativas entram na ordem). */
+  function moverTecnica(categoria: CategoriaComTecnicas, id: string, direcao: 'cima' | 'baixo') {
+    const ids = moverNaLista(categoria.tecnicas.filter((t) => t.ativo).map((t) => t.id), id, direcao);
+    if (ids) void executar(() => curriculoService.reordenarTecnicas(escola.id, categoria.id, ids));
   }
 
   async function salvarFormulario() {
@@ -160,8 +172,8 @@ export function CurriculoPage() {
                   </div>
                   {podeEditar && (
                     <div className={s.acoes}>
-                      <Botao variante="fantasma" somenteIcone icone={<ArrowUp size={18} />} aria-label={`Subir categoria ${c.nome}`} title="Subir" disabled={ci === 0 || ocupado} onClick={() => executar(() => curriculoService.moverCategoria(escola.id, c.id, 'cima'))} />
-                      <Botao variante="fantasma" somenteIcone icone={<ArrowDown size={18} />} aria-label={`Descer categoria ${c.nome}`} title="Descer" disabled={ci === categorias.length - 1 || ocupado} onClick={() => executar(() => curriculoService.moverCategoria(escola.id, c.id, 'baixo'))} />
+                      <Botao variante="fantasma" somenteIcone icone={<ArrowUp size={18} />} aria-label={`Subir categoria ${c.nome}`} title="Subir" disabled={ci === 0 || ocupado} onClick={() => moverCategoria(c.id, 'cima')} />
+                      <Botao variante="fantasma" somenteIcone icone={<ArrowDown size={18} />} aria-label={`Descer categoria ${c.nome}`} title="Descer" disabled={ci === categorias.length - 1 || ocupado} onClick={() => moverCategoria(c.id, 'baixo')} />
                       <Botao variante="fantasma" somenteIcone icone={<Pencil size={18} />} aria-label={`Editar categoria ${c.nome}`} title="Editar" onClick={() => abrir({ tipo: 'categoria', id: c.id, nome: c.nome, descricao: c.descricao })} />
                       <Botao variante="fantasma" somenteIcone icone={<Trash2 size={18} />} aria-label={`Excluir categoria ${c.nome}`} title="Excluir" onClick={() => setExcluir(c)} />
                     </div>
@@ -176,10 +188,10 @@ export function CurriculoPage() {
                         tecnica={t}
                         posicao={ti + 1}
                         primeira={ti === 0}
-                        ultima={ti === c.tecnicas.length - 1}
+                        ultima={ti === c.tecnicas.filter((x) => x.ativo).length - 1}
                         podeEditar={podeEditar}
                         ocupado={ocupado}
-                        onMover={(d) => executar(() => curriculoService.moverTecnica(escola.id, t.id, d))}
+                        onMover={(d) => moverTecnica(c, t.id, d)}
                         onEditar={() => abrir({ tipo: 'tecnica', id: t.id, categoriaId: c.id, nome: t.nome, descricao: t.descricao })}
                         onAtivo={(ativo) =>
                           executar(

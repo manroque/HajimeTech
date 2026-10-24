@@ -2,7 +2,8 @@ import type { Faixa } from '../types';
 
 /**
  * Progressão oficial de faixas da academia.
- * Tabela global (não pertence a uma escola). Ver `faixas` em schema.sql.
+ * Tabela global (não pertence a uma escola). Ver o modelo `faixas` em
+ * backend/prisma/schema.prisma.
  *
  * Marrom e Preta estão com `conteudoDefinido: false`: o sistema NÃO inventa
  * técnicas para elas e exibe um estado vazio no currículo.

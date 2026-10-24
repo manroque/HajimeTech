@@ -1,10 +1,8 @@
 /**
- * Autenticação (API real), escolas, faixas e turmas (simulados).
- * Cada função simulada indica o endpoint REST que a substituirá.
+ * Autenticação, faixas, escolas, professores e turmas.
  */
 import type { Escola, Faixa, Turma, Usuario } from '../types';
-import { http } from './http';
-import { agora, db, encontrar, exigirPerfil, novoId, salvar, simular, usuarioAtual } from './mockDb';
+import { daEscola, http, consulta } from './http';
 
 /* ---------------------------------------------------------------- Autenticação */
 
@@ -28,9 +26,9 @@ export const authService = {
 /* ---------------------------------------------------------------- Faixas */
 
 export const faixasService = {
-  /** INTEGRAÇÃO BACKEND: GET /api/faixas */
+  /** GET /api/faixas */
   listar(): Promise<Faixa[]> {
-    return simular(() => db().faixas, 0);
+    return http.get('/faixas');
   },
 };
 
@@ -39,75 +37,38 @@ export const faixasService = {
 export type EscolaInput = Pick<Escola, 'nome' | 'cidade' | 'endereco' | 'telefone' | 'responsavel'>;
 
 export const escolasService = {
-  /** INTEGRAÇÃO BACKEND: GET /api/escolas (admin vê todas; professor, só a sua) */
+  /** GET /api/escolas (administrador vê todas; professor e aluno, só a sua) */
   listar(incluirInativas = false): Promise<Escola[]> {
-    return simular(() => {
-      const usuario = usuarioAtual();
-      return db()
-        .escolas.filter((e) => incluirInativas || e.ativo)
-        // Professores e alunos só enxergam a própria escola.
-        .filter((e) => !usuario || usuario.perfil === 'administrador' || e.id === usuario.escolaId)
-        .sort((a, b) => a.nome.localeCompare(b.nome));
-    });
+    return http.get(`/escolas${consulta({ incluirInativas })}`);
   },
 
-  /** INTEGRAÇÃO BACKEND: POST /api/escolas */
+  /** POST /api/escolas */
   criar(dados: EscolaInput): Promise<Escola> {
-    return simular(() => {
-      exigirPerfil(['administrador']);
-      const escola: Escola = { ...dados, id: novoId(), ativo: true, criadoEm: agora(), atualizadoEm: agora() };
-      db().escolas.push(escola);
-      salvar();
-      return escola;
-    });
+    return http.post('/escolas', dados);
   },
 
-  /** INTEGRAÇÃO BACKEND: PUT /api/escolas/:id */
+  /** PUT /api/escolas/:id */
   atualizar(id: string, dados: EscolaInput): Promise<Escola> {
-    return simular(() => {
-      exigirPerfil(['administrador']);
-      const escola = encontrar(db().escolas, id, 'Escola');
-      Object.assign(escola, dados, { atualizadoEm: agora() });
-      salvar();
-      return escola;
-    });
+    return http.put(`/escolas/${id}`, dados);
   },
 
-  /** INTEGRAÇÃO BACKEND: PATCH /api/escolas/:id/ativo { ativo } (desativação lógica) */
+  /** PATCH /api/escolas/:id/ativo { ativo } (desativação lógica) */
   definirAtivo(id: string, ativo: boolean): Promise<Escola> {
-    return simular(() => {
-      exigirPerfil(['administrador']);
-      const escola = encontrar(db().escolas, id, 'Escola');
-      escola.ativo = ativo;
-      escola.atualizadoEm = agora();
-      salvar();
-      return escola;
-    });
+    return http.patch(`/escolas/${id}/ativo`, { ativo });
   },
 
-  /** Resumo usado nos cartões da tela de escolas. INTEGRAÇÃO BACKEND: GET /api/escolas/resumo */
+  /** GET /api/escolas/resumo: alunos e turmas ativos por escola */
   resumo(): Promise<Record<string, { alunos: number; turmas: number }>> {
-    return simular(() => {
-      const { alunos, turmas, escolas } = db();
-      return Object.fromEntries(
-        escolas.map((e) => [
-          e.id,
-          {
-            alunos: alunos.filter((a) => a.escolaId === e.id && a.ativo).length,
-            turmas: turmas.filter((t) => t.escolaId === e.id && t.ativo).length,
-          },
-        ]),
-      );
-    });
+    return http.get('/escolas/resumo');
   },
 };
 
 /* ---------------------------------------------------------------- Professores */
 
 export const usuariosService = {
-  /** INTEGRAÇÃO BACKEND: GET /api/escolas/:escolaId/professores */
+  /** GET /api/escolas/:escolaId/professores */
   listarProfessores(escolaId: string): Promise<Usuario[]> {
-    return simular(() => db().usuarios.filter((u) => u.perfil === 'professor' && u.escolaId === escolaId && u.ativo));
+    return http.get(`${daEscola(escolaId)}/professores`);
   },
 };
 
@@ -117,59 +78,33 @@ export type TurmaInput = Pick<Turma, 'nome' | 'idadeMinima' | 'idadeMaxima' | 'p
   horarios: Pick<Turma['horarios'][number], 'diaSemana' | 'horaInicio' | 'horaFim'>[];
 };
 
+/** Envia só os campos esperados pela API (a tela pode passar a turma inteira). */
+const corpoTurma = (d: TurmaInput): TurmaInput => ({
+  nome: d.nome,
+  idadeMinima: d.idadeMinima,
+  idadeMaxima: d.idadeMaxima,
+  professorId: d.professorId,
+  horarios: d.horarios.map(({ diaSemana, horaInicio, horaFim }) => ({ diaSemana, horaInicio, horaFim })),
+});
+
 export const turmasService = {
-  /** INTEGRAÇÃO BACKEND: GET /api/escolas/:escolaId/turmas?incluirInativas=false */
+  /** GET /api/escolas/:escolaId/turmas?incluirInativas= */
   listar(escolaId: string, incluirInativas = false): Promise<Turma[]> {
-    return simular(() =>
-      db()
-        .turmas.filter((t) => t.escolaId === escolaId && (incluirInativas || t.ativo))
-        .sort((a, b) => a.idadeMinima - b.idadeMinima),
-    );
+    return http.get(`${daEscola(escolaId)}/turmas${consulta({ incluirInativas })}`);
   },
 
-  /** INTEGRAÇÃO BACKEND: POST /api/escolas/:escolaId/turmas */
+  /** POST /api/escolas/:escolaId/turmas */
   criar(escolaId: string, dados: TurmaInput): Promise<Turma> {
-    return simular(() => {
-      exigirPerfil(['administrador', 'professor']);
-      const id = novoId();
-      const turma: Turma = {
-        ...dados,
-        id,
-        escolaId,
-        ativo: true,
-        horarios: dados.horarios.map((h) => ({ ...h, id: novoId(), turmaId: id })),
-        criadoEm: agora(),
-        atualizadoEm: agora(),
-      };
-      db().turmas.push(turma);
-      salvar();
-      return turma;
-    });
+    return http.post(`${daEscola(escolaId)}/turmas`, corpoTurma(dados));
   },
 
-  /** INTEGRAÇÃO BACKEND: PUT /api/escolas/:escolaId/turmas/:id (substitui os horários) */
+  /** PUT /api/escolas/:escolaId/turmas/:id (substitui os horários) */
   atualizar(escolaId: string, id: string, dados: TurmaInput): Promise<Turma> {
-    return simular(() => {
-      exigirPerfil(['administrador', 'professor']);
-      const turma = encontrar(db().turmas.filter((t) => t.escolaId === escolaId), id, 'Turma');
-      Object.assign(turma, dados, {
-        horarios: dados.horarios.map((h) => ({ ...h, id: novoId(), turmaId: id })),
-        atualizadoEm: agora(),
-      });
-      salvar();
-      return turma;
-    });
+    return http.put(`${daEscola(escolaId)}/turmas/${id}`, corpoTurma(dados));
   },
 
-  /** INTEGRAÇÃO BACKEND: PATCH /api/escolas/:escolaId/turmas/:id/ativo { ativo } */
+  /** PATCH /api/escolas/:escolaId/turmas/:id/ativo { ativo } */
   definirAtivo(escolaId: string, id: string, ativo: boolean): Promise<Turma> {
-    return simular(() => {
-      exigirPerfil(['administrador', 'professor']);
-      const turma = encontrar(db().turmas.filter((t) => t.escolaId === escolaId), id, 'Turma');
-      turma.ativo = ativo;
-      turma.atualizadoEm = agora();
-      salvar();
-      return turma;
-    });
+    return http.patch(`${daEscola(escolaId)}/turmas/${id}/ativo`, { ativo });
   },
 };

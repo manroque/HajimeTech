@@ -2,11 +2,11 @@
  * Sessão do usuário: login com e-mail e senha na API (POST /api/auth/login).
  *
  * O token fica no sessionStorage (some ao fechar a aba) e é enviado pelo
- * services/http.ts. Enquanto os demais services usam o mock, o usuário logado
- * também é repassado a `definirUsuarioSessao` para o mock aplicar as permissões.
+ * services/http.ts em todas as requisições. As permissões são verificadas
+ * pela API; no front, `pode()` só esconde o que o perfil não pode usar.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { authService, definirUsuarioSessao, ErroApi } from '../services';
+import { authService, ErroApi } from '../services';
 import { definirAoNaoAutorizado, definirToken } from '../services/http';
 import type { Usuario } from '../types';
 import { pode, type Acao } from '../utils/permissoes';
@@ -29,7 +29,6 @@ const AuthContext = createContext<AuthContextValor | null>(null);
 
 function aplicarSessao(sessao: Sessao | null): void {
   definirToken(sessao?.token ?? null);
-  definirUsuarioSessao(sessao?.usuario ?? null);
 }
 
 function lerSessao(): Sessao | null {

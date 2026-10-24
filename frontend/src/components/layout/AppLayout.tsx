@@ -1,6 +1,5 @@
 import {
   Award,
-  BarChart3,
   BookOpen,
   CalendarCheck,
   ClipboardList,
@@ -9,7 +8,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  RotateCcw,
   School,
   Target,
   TrendingUp,
@@ -21,7 +19,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEscola } from '../../contexts/EscolaContext';
-import { restaurarDadosExemplo } from '../../services';
 import type { Perfil } from '../../types';
 import { PERFIS } from '../../utils/formatacao';
 import { Logo } from '../Logo';
@@ -84,13 +81,6 @@ export function AppLayout() {
 
   if (!usuario) return null;
 
-  function restaurar() {
-    if (window.confirm('Descartar todas as alterações feitas nesta sessão e voltar aos dados de exemplo?')) {
-      restaurarDadosExemplo();
-      window.location.reload();
-    }
-  }
-
   return (
     <div className={s.app}>
       <a href="#conteudo" className={s.pular}>Pular para o conteúdo</a>
@@ -125,14 +115,6 @@ export function AppLayout() {
             );
           })}
         </nav>
-
-        <div className={s.menuRodape}>
-          <BarChart3 size={16} aria-hidden />
-          <span>Dados de demonstração</span>
-          <button onClick={restaurar} className={s.restaurar} title="Restaurar dados de exemplo">
-            <RotateCcw size={14} /> Restaurar
-          </button>
-        </div>
       </aside>
       {menuAberto && <div className={s.sombra} onClick={() => setMenuAberto(false)} aria-hidden />}
 

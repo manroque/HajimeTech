@@ -1,9 +1,10 @@
 /**
- * Ponto de entrada dos dados mockados.
+ * Dados de demonstração do HajimeTech.
  *
- * `criarBancoInicial()` monta o "banco" em memória usado pela camada
- * /src/services enquanto o backend real não existe. O mesmo conteúdo é
- * exportado para SQL por `npm run gerar-seed` (→ /database/seed.sql).
+ * `criarBancoInicial()` monta escolas, alunos, currículo, frequência etc. com
+ * IDs fixos. O script `npm run gerar-seed` transforma esse conteúdo em
+ * /database/seed.sql, que é carregado no banco. As telas não usam estes dados
+ * diretamente: tudo chega pela API.
  */
 import type {
   Aluno,
