@@ -33,7 +33,8 @@ export function alunoSomenteLeitura(req, res, next) {
  * Lança 403 se o aluno do token for outro.
  */
 export function garantirProprioAluno(req, alunoId) {
-  if (req.usuario.perfil === 'aluno' && alunoId !== req.usuario.alunoId) throw semPermissao();
+  if (req.usuario.perfil !== 'aluno') return;
+  if (!ehUuid(req.usuario.alunoId) || alunoId !== req.usuario.alunoId) throw semPermissao();
 }
 
 /*
@@ -41,7 +42,11 @@ export function garantirProprioAluno(req, alunoId) {
  * dados, independentemente do que foi pedido.
  */
 export function alunoDaConsulta(req) {
-  if (req.usuario.perfil === 'aluno') return req.usuario.alunoId;
+  if (req.usuario.perfil === 'aluno') {
+    // Token de aluno sem aluno vinculado nunca pode virar "todos os alunos".
+    if (!ehUuid(req.usuario.alunoId)) throw semPermissao();
+    return req.usuario.alunoId;
+  }
   const { alunoId } = req.query;
   return typeof alunoId === 'string' && alunoId ? alunoId : null;
 }

@@ -245,6 +245,17 @@ describe('rotas protegidas', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  test('token de aluno sem aluno vinculado não lista dados de outros alunos → 403', async () => {
+    query.mockResolvedValueOnce({ rows: [{ id: ESCOLA }] }); // escola existe
+
+    const r = await request(app)
+      .get(`/api/escolas/${ESCOLA}/graduacoes`)
+      .set('Authorization', `Bearer ${tokenDe('aluno', { alunoId: null })}`);
+
+    expect(r.statusCode).toBe(403);
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
   test('rotas antigas fora de /api/escolas não existem mais → 404', async () => {
     const r = await request(app).get('/api/alunos').set('Authorization', `Bearer ${tokenDe('professor')}`);
 
