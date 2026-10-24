@@ -1,0 +1,74 @@
+# Verificação automática a cada pull request e a cada envio para a main.
+# Frontend: verifica os tipos e gera o build de produção.
+# Backend: sobe um PostgreSQL, aplica as migrations do Prisma, carrega o seed
+# e roda todos os testes, inclusive os de integração com o banco.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend (tipos e build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+
+  backend:
+    name: Backend (testes com banco)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: hajimetech
+          POSTGRES_USER: hajimetech
+          POSTGRES_PASSWORD: hajimetech
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hajimetech -d hajimetech"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://hajimetech:hajimetech@localhost:5432/hajimetech
+      TEST_DATABASE_URL: postgresql://hajimetech:hajimetech@localhost:5432/hajimetech
+      JWT_SECRET: segredo-apenas-para-o-ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - name: Aplicar migrations
+        run: npx prisma migrate deploy
+      - name: Carregar dados de exemplo
+        run: npx prisma db seed
+      - name: Testes
+        run: npm test
