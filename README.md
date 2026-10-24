@@ -99,7 +99,7 @@ O acesso é feito com email e senha, e a API emite um token JWT. As permissões 
 
 ```mermaid
 flowchart LR
-    U([Usuário]) --> F[Frontend<br/>React + TypeScript]
+    U([Usuário]) --> F[Frontend<br/>React + JavaScript]
     F -- "HTTP + JSON, token JWT" --> A[API<br/>Node.js + Express]
     A -- "SQL, sempre filtrado por escola" --> B[(PostgreSQL)]
     M[Migrations do Prisma] -.-> B
@@ -115,7 +115,7 @@ Os desenhos completos (camadas do front, caminho de uma requisição, permissõe
 
 | Camada | Tecnologias |
 |---|---|
-| Frontend | React 19, Vite, TypeScript, React Router, Recharts, Lucide React, CSS Modules |
+| Frontend | React 19, Vite, JavaScript (JSX), React Router, Recharts, Lucide React, CSS Modules |
 | Backend | Node.js, Express, driver `pg`, JSON Web Token, bcrypt |
 | Banco de dados | PostgreSQL 16, Prisma (migrations) |
 | Testes | Jest, Supertest |
@@ -136,7 +136,7 @@ HajimeTech/
 │   ├── workflows/ci.yml      Verificação automática a cada pull request
 │   └── ISSUE_TEMPLATE/       Modelos de issue (tarefa e bug)
 ├── frontend/
-│   ├── scripts/gerar-seed.ts Gera database/seed.sql a partir dos dados de demonstração
+│   ├── scripts/gerar-seed.js Gera database/seed.sql a partir dos dados de demonstração
 │   └── src/
 │       ├── pages/            Uma página por tela
 │       ├── components/       Layout, gráficos, perfil do aluno e componentes de interface
@@ -219,7 +219,7 @@ O administrador começa na tela Escolas e escolhe qual acessar. Professores e al
 
 | Onde | Comando | O que faz |
 |---|---|---|
-| `frontend` | `npm run build` | Verifica os tipos e gera a versão de produção |
+| `frontend` | `npm run build` | Gera a versão de produção |
 | `frontend` | `npm run gerar-seed` | Regera `database/seed.sql` a partir dos dados de demonstração |
 | `backend` | `npm test` | Roda os testes |
 | `backend` | `npm run db:migrate` | Cria e aplica uma migration a partir do `schema.prisma` |
@@ -256,7 +256,7 @@ Contrato completo das rotas, exemplos e regras: [`backend/README.md`](backend/RE
 |---|---|---|
 | Unitários | Login, sessão, token inválido ou expirado, permissões por perfil e acesso a outra escola | `npm test` em `backend` |
 | Integração | Fluxo real com o banco: isolamento entre escolas, perfil aluno, exclusão lógica, currículo, graduações, frequência e painel | `npm test` com a variável `TEST_DATABASE_URL` apontando para o banco do Docker |
-| Frontend | Verificação de tipos e build de produção | `npm run build` em `frontend` |
+| Frontend | Build de produção | `npm run build` em `frontend` |
 
 O workflow `.github/workflows/ci.yml` executa tudo isso a cada pull request, com um PostgreSQL próprio. As tarefas pendentes incluem, nos critérios de aceite, os testes da sua parte.
 

@@ -19,9 +19,9 @@ A tela Avaliações mostra os critérios da escola (Técnica, Disciplina, Frequ�
 
 1. Na tela Avaliações, um botão "Critérios" (visível para administrador e professor) que abre a lista de critérios.
 2. Ações: criar, editar nome e descrição, subir e descer na ordem e desativar.
-3. Criar as funções correspondentes em `avaliacoesService` (`frontend/src/services/desempenhoService.ts`).
+3. Criar as funções correspondentes em `avaliacoesService` (`frontend/src/services/desempenhoService.js`).
 4. Ao desativar um critério, avisar que ele deixa de aparecer nas novas avaliações, mas as notas antigas continuam no histórico.
-5. Reaproveitar `moverNaLista` de `curriculoService.ts` para a ordenação.
+5. Reaproveitar `moverNaLista` de `curriculoService.js` para a ordenação.
 
 ## Critérios de aceite
 

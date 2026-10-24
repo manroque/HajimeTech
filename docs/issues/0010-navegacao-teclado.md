@@ -23,21 +23,21 @@ As abas do perfil do aluno (Frequência, Graduações, Técnicas, Avaliações e
 
 ## Proposta
 
-Aplicar os padrões de abas e de grupo de opções do ARIA Authoring Practices (W3C) nos componentes `Abas` e `Segmentado`, em `frontend/src/components/ui/index.tsx`:
+Aplicar os padrões de abas e de grupo de opções do ARIA Authoring Practices (W3C) nos componentes `Abas` e `Segmentado`, em `frontend/src/components/ui/index.jsx`:
 
 1. Setas para a direita e para baixo vão para a próxima opção; para a esquerda e para cima, para a anterior, voltando ao início no fim da lista.
 2. Home vai para a primeira opção e End, para a última.
 3. A opção escolhida já é selecionada e recebe o foco.
 4. Só a opção ativa entra na ordem do Tab (`tabIndex={0}` na ativa e `tabIndex={-1}` nas demais).
-5. Cada aba aponta para o seu painel com `aria-controls`, e o conteúdo recebe `role="tabpanel"` e `aria-labelledby`. Sugestão: criar um componente `PainelAba` e aplicar esse componente em `frontend/src/components/PerfilAluno.tsx`.
+5. Cada aba aponta para o seu painel com `aria-controls`, e o conteúdo recebe `role="tabpanel"` e `aria-labelledby`. Sugestão: criar um componente `PainelAba` e aplicar esse componente em `frontend/src/components/PerfilAluno.jsx`.
 6. Todos os botões desses grupos com `type="button"`.
 
 Referência: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/ e https://www.w3.org/WAI/ARIA/apg/patterns/radio/
 
 ## Arquivos envolvidos
 
-* `frontend/src/components/ui/index.tsx` (`Abas` e `Segmentado`)
-* `frontend/src/components/PerfilAluno.tsx`
+* `frontend/src/components/ui/index.jsx` (`Abas` e `Segmentado`)
+* `frontend/src/components/PerfilAluno.jsx`
 
 ## Como testar
 

@@ -13,7 +13,7 @@
 
 ## Contexto
 
-Na tela Currículo, os botões de subir e descer já montam a lista completa na nova ordem (função `moverNaLista`) e chamam `reordenarCategorias` e `reordenarTecnicas` em `frontend/src/services/curriculoService.ts`. Falta o servidor gravar a nova ordem.
+Na tela Currículo, os botões de subir e descer já montam a lista completa na nova ordem (função `moverNaLista`) e chamam `reordenarCategorias` e `reordenarTecnicas` em `frontend/src/services/curriculoService.js`. Falta o servidor gravar a nova ordem.
 
 ## Proposta
 

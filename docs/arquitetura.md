@@ -10,7 +10,7 @@ O HajimeTech tem três partes que conversam em sequência: a interface no navega
 flowchart LR
     U([Pessoa usuária<br/>administrador, professor ou aluno])
     subgraph Navegador
-        F[Frontend<br/>React + Vite + TypeScript]
+        F[Frontend<br/>React + Vite + JavaScript]
     end
     subgraph Servidor
         A[API REST<br/>Node.js + Express]
@@ -54,7 +54,7 @@ flowchart TB
     end
     subgraph Servicos["services"]
         SV[alunosService, curriculoService,<br/>dashboardService ...]
-        H[http.ts<br/>fetch + token + erros]
+        H[http.js<br/>fetch + token + erros]
     end
     API[(API)]
 
@@ -68,9 +68,9 @@ flowchart TB
 **Princípios que guiaram o front**
 
 1. **As telas nunca chamam a API direto.** Toda busca de dados passa por uma função de `services`. Isso permitiu criar as telas primeiro, com dados simulados, e depois trocar só o corpo dessas funções pelas chamadas reais, sem mexer em nenhuma tela.
-2. **Tipos em um só lugar.** `frontend/src/types/index.ts` descreve cada entidade (Aluno, Turma, Graduação...) igual ao banco, em camelCase. Se o formato mudar, o TypeScript aponta todos os lugares afetados.
+2. **Tipos em um só lugar.** `frontend/src/types/index.js` documenta em JSDoc cada entidade (Aluno, Turma, Graduação...) igual ao banco, em camelCase. O editor usa essas definições para mostrar os campos de cada objeto.
 3. **Escola selecionada como contexto.** Todas as telas leem a escola do `EscolaContext` e a repassam aos services. É assim que o sistema funciona com várias academias.
-4. **Permissões declaradas numa tabela.** `utils/permissoes.ts` diz o que cada perfil pode fazer. As telas perguntam `pode('editarCurriculo')` em vez de repetir regras.
+4. **Permissões declaradas numa tabela.** `utils/permissoes.js` diz o que cada perfil pode fazer. As telas perguntam `pode('editarCurriculo')` em vez de repetir regras.
 5. **Componentes de interface reaproveitados.** Botões, campos, modais, abas e cartões ficam em `components/ui`, com acessibilidade embutida (rótulos, foco visível, navegação por teclado). Cada tela só monta as peças.
 6. **Pensado para quem não é da área.** Cada gráfico tem título simples e uma frase explicando o que mostra, os números grandes comparam com o período anterior e as faixas aparecem com a cor real e o nome escrito.
 7. **Identidade visual em tokens.** Cores, fontes e espaçamentos ficam em `styles/tokens.css`, para manter o padrão vermelho, azul e branco em todas as telas.
@@ -187,9 +187,9 @@ flowchart LR
 
 | Quero... | Arquivos |
 |---|---|
-| Criar uma tela | `frontend/src/pages`, rota em `AppRoutes.tsx`, item de menu em `components/layout/AppLayout.tsx` |
+| Criar uma tela | `frontend/src/pages`, rota em `AppRoutes.jsx`, item de menu em `components/layout/AppLayout.jsx` |
 | Buscar ou gravar um dado novo | Função em `frontend/src/services` e rota em `backend/src/routes` |
-| Mudar uma regra de permissão | `backend/src/middleware` (servidor) e `frontend/src/utils/permissoes.ts` (tela) |
+| Mudar uma regra de permissão | `backend/src/middleware` (servidor) e `frontend/src/utils/permissoes.js` (tela) |
 | Mudar o banco | `backend/prisma/schema.prisma` e uma migration nova (`npm run db:migrate`) |
 | Mudar os dados de demonstração | `frontend/src/mocks` e `npm run gerar-seed` |
 | Mudar cores ou fontes | `frontend/src/styles/tokens.css` |

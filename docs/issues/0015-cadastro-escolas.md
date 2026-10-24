@@ -13,7 +13,7 @@
 
 ## Contexto
 
-A tela Escolas (perfil administrador) já tem os botões "Nova escola", editar e desativar, e o front já chama as rotas abaixo por `escolasService` (`frontend/src/services/cadastrosService.ts`). A listagem, o resumo e os professores já funcionam. Falta o lado do servidor das gravações.
+A tela Escolas (perfil administrador) já tem os botões "Nova escola", editar e desativar, e o front já chama as rotas abaixo por `escolasService` (`frontend/src/services/cadastrosService.js`). A listagem, o resumo e os professores já funcionam. Falta o lado do servidor das gravações.
 
 ## Proposta
 

@@ -1,5 +1,5 @@
 # Verificação automática a cada pull request e a cada envio para a main.
-# Frontend: verifica os tipos e gera o build de produção.
+# Frontend: gera o build de produção.
 # Backend: sobe um PostgreSQL, aplica as migrations do Prisma, carrega o seed
 # e roda todos os testes, inclusive os de integração com o banco.
 
@@ -12,7 +12,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (tipos e build)
+    name: Frontend (build)
     runs-on: ubuntu-latest
     defaults:
       run:

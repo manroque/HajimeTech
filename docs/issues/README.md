@@ -10,8 +10,8 @@ As issues oficiais ficam em https://github.com/manroque/HajimeTech/issues
 |---|---:|
 | Tarefas abertas do backend | 6 |
 | Tarefas abertas do frontend | 6 |
-| Resolvidas no PR #25 | 8 |
-| Total | 20 |
+| Resolvidas no PR #25 | 9 |
+| Total | 21 |
 
 ## Índice geral
 
@@ -37,6 +37,7 @@ As issues oficiais ficam em https://github.com/manroque/HajimeTech/issues
 | [#22](https://github.com/manroque/HajimeTech/issues/22) | Troca de senha | Tarefa | Frontend | Aberta | [0022](0022-troca-senha.md) |
 | [#23](https://github.com/manroque/HajimeTech/issues/23) | Como o front foi pensado | Documentação | Frontend, Documentação | Resolvida no PR #25 | [0023](0023-como-o-front-foi-pensado.md) |
 | [#24](https://github.com/manroque/HajimeTech/issues/24) | Desenho da arquitetura do projeto | Documentação | Documentação | Resolvida no PR #25 | [0024](0024-arquitetura-do-projeto.md) |
+| [#26](https://github.com/manroque/HajimeTech/issues/26) | Converter o front para JavaScript (exigência da disciplina) | Tarefa | Frontend | Resolvida no PR #25 | [0026](0026-front-em-javascript.md) |
 
 ## Tarefas abertas por área
 
@@ -76,6 +77,7 @@ As pendências de #15 a #19 estão marcadas no código com um comentário `PENDE
 | #11 | Padrão de issues e este dicionário |
 | #23 | Como o front foi pensado |
 | #24 | Desenho da arquitetura |
+| #26 | Front convertido para JavaScript |
 
 ## Pull requests
 
@@ -109,6 +111,6 @@ As pendências de #15 a #19 estão marcadas no código com um comentário `PENDE
 
 1. No GitHub, clique em "New issue" e escolha o modelo **Tarefa** ou **Bug** (ficam em `.github/ISSUE_TEMPLATE`).
 2. Preencha todas as seções e marque as etiquetas de tipo e de área.
-3. Crie a ficha nesta pasta com o número e um nome curto, por exemplo `0026-exportar-relatorio.md`, copiando o texto da issue e o quadro de informações do topo.
+3. Crie a ficha nesta pasta com o número e um nome curto, por exemplo `0030-exportar-relatorio.md`, copiando o texto da issue e o quadro de informações do topo.
 4. Acrescente a issue no índice geral e na tabela da sua área.
 5. Quando a issue for resolvida, atualize a situação na ficha e no índice, citando o pull request.

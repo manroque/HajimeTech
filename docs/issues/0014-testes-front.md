@@ -13,15 +13,15 @@
 
 ## Contexto
 
-O backend tem testes unitários e de integração (#7). O front é verificado pelo TypeScript e pelo build no CI, mas não tem testes de comportamento.
+O backend tem testes unitários e de integração (#7). O front é verificado pelo build no CI, mas não tem testes de comportamento.
 
 ## Proposta
 
 1. Adicionar Vitest e Testing Library ao `frontend`.
 2. Testar primeiro o que tem regra:
-   * `utils/permissoes.ts`: o que cada perfil pode fazer
-   * `utils/formatacao.ts`: datas, idade, faixa etária e textos de variação
-   * `services/curriculoService.ts`: `moverNaLista` (subir e descer itens)
+   * `utils/permissoes.js`: o que cada perfil pode fazer
+   * `utils/formatacao.js`: datas, idade, faixa etária e textos de variação
+   * `services/curriculoService.js`: `moverNaLista` (subir e descer itens)
    * componentes `Abas` e `Segmentado`: navegação pelas setas do teclado
 3. Testar telas com a API simulada: login com erro, tela de Alunos com busca e exclusão, Currículo sem botões de edição para o perfil aluno.
 4. Incluir `npm test` do front no CI.

@@ -13,7 +13,7 @@
 
 ## Contexto
 
-Até aqui, nada era conferido automaticamente quando alguém abria um pull request. Um erro de tipo no front ou um teste quebrado no backend só aparecia quando outra pessoa rodava o projeto.
+Até aqui, nada era conferido automaticamente quando alguém abria um pull request. Um erro no build do front ou um teste quebrado no backend só aparecia quando outra pessoa rodava o projeto.
 
 ## O que foi feito
 
@@ -21,7 +21,7 @@ Foi criado o workflow `.github/workflows/ci.yml`, que roda a cada pull request e
 
 | Etapa | O que faz |
 |---|---|
-| Frontend (tipos e build) | Instala as dependências com `npm ci` e roda `npm run build`, que verifica os tipos do TypeScript e gera a versão de produção |
+| Frontend (build) | Instala as dependências com `npm ci` e roda `npm run build`, que gera a versão de produção e falha se houver erro de sintaxe ou import quebrado |
 | Backend (testes com banco) | Sobe um PostgreSQL 16 próprio, aplica as migrations do Prisma (`prisma migrate deploy`), carrega o seed (`prisma db seed`) e roda `npm test`, incluindo os testes de integração de #7 |
 
 O resultado aparece direto no pull request, com um sinal verde ou vermelho em cada etapa.
@@ -33,7 +33,7 @@ O resultado aparece direto no pull request, com um sinal verde ou vermelho em ca
 ## Como testar
 
 1. Abra um pull request.
-2. Na aba "Checks" do pull request, confira as etapas "Frontend (tipos e build)" e "Backend (testes com banco)".
+2. Na aba "Checks" do pull request, confira as etapas "Frontend (build)" e "Backend (testes com banco)".
 
 ## Próximo passo sugerido
 
@@ -42,7 +42,7 @@ Em Settings, Branches, criar uma regra para a `main` exigindo que as duas etapas
 ## Critérios de aceite
 
 * [x] Workflow roda a cada pull request
-* [x] Front: tipos e build verificados
+* [x] Front: build verificado
 * [x] Backend: migrations, seed e todos os testes com banco
 * [ ] Regra de proteção da `main` exigindo o CI (depende de quem administra o repositório)
 

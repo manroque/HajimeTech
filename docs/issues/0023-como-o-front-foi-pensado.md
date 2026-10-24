@@ -38,7 +38,7 @@ Toda tela lê a escola do `EscolaContext` e a passa para os services. O administ
 
 **4. Permissões declaradas num só lugar**
 
-`utils/permissoes.ts` diz o que cada perfil pode fazer. As telas perguntam `pode('editarCurriculo')` e escondem o que não é permitido. A garantia real fica no servidor.
+`utils/permissoes.js` diz o que cada perfil pode fazer. As telas perguntam `pode('editarCurriculo')` e escondem o que não é permitido. A garantia real fica no servidor.
 
 **5. Pensado para quem não é da área**
 
@@ -60,7 +60,7 @@ Cores, fontes e espaçamentos ficam em `styles/tokens.css` (vermelho, azul e bra
 ## Arquivos de referência
 
 * `docs/arquitetura.md` (seção 2)
-* `frontend/src/services/index.ts`, `frontend/src/types/index.ts`, `frontend/src/utils/permissoes.ts`, `frontend/src/components/ui/index.tsx`
+* `frontend/src/services/index.js`, `frontend/src/types/index.js`, `frontend/src/utils/permissoes.js`, `frontend/src/components/ui/index.jsx`
 
 ## Critérios de aceite
 

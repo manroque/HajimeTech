@@ -33,13 +33,13 @@ A lista atualizada, com os números das issues, está em [`docs/issues`](../docs
 ## 1. Situação atual
 
 ```
-Telas (React) ──► frontend/src/services/*.ts ──► http.ts ──► API REST (Express) ──► PostgreSQL
+Telas (React) ──► frontend/src/services/*.js ──► http.js ──► API REST (Express) ──► PostgreSQL
                                                                                    (prisma/migrations)
 ```
 
 - As telas **só** acessam dados pela camada `frontend/src/services` (`alunosService`, `turmasService`, `curriculoService`, `dashboardService` etc.). Cada função chama uma rota da [seção 7](#7-endpoints).
 - A API usa SQL com o driver `pg` (`src/db/index.js`). O Prisma cuida **só das migrações** do banco.
-- O modelo de dados oficial é **`prisma/schema.prisma`**, versionado em `prisma/migrations` (veja `database/README.md`). Os tipos do front (`frontend/src/types/index.ts`) espelham esse modelo em `camelCase`.
+- O modelo de dados oficial é **`prisma/schema.prisma`**, versionado em `prisma/migrations` (veja `database/README.md`). Os tipos do front (`frontend/src/types/index.js`) espelham esse modelo em `camelCase`.
 - Os dados de demonstração vêm de `database/seed.sql`, gerado a partir de `frontend/src/mocks` pelo script `npm run gerar-seed` (no front).
 
 ## 2. Estrutura do código
@@ -83,13 +83,13 @@ backend/src/
    VITE_API_URL=http://localhost:3000/api
    ```
 
-2. **Cliente** `frontend/src/services/http.ts`:
+2. **Cliente** `frontend/src/services/http.js`:
    - prefixa `VITE_API_URL`;
    - envia `Content-Type: application/json` e `Authorization: Bearer <token>` (definido por `definirToken(token)` após o login);
    - converte respostas de erro em `ErroApi(status, dados.erro)`, que as telas já sabem exibir;
    - em qualquer `401`, devolve o usuário para a tela de login.
 
-3. **Formato das respostas:** a API devolve objetos exatamente como os tipos de `frontend/src/types/index.ts` (**camelCase**, datas `AAAA-MM-DD`, data e hora ISO 8601, horas `HH:MM`). A conversão fica em `src/lib/mapeadores.js`. Detalhes:
+3. **Formato das respostas:** a API devolve objetos exatamente como os tipos de `frontend/src/types/index.js` (**camelCase**, datas `AAAA-MM-DD`, data e hora ISO 8601, horas `HH:MM`). A conversão fica em `src/lib/mapeadores.js`. Detalhes:
    - `Turma.horarios` e `Avaliacao.notas` são **listas aninhadas** (juntam `horarios_turma` e `avaliacao_notas`).
    - `TIME` do PostgreSQL vem como `HH:MM:SS` e é devolvido como `HH:MM`.
    - `DATE` é lido como texto (`pg.types.setTypeParser(1082, ...)` em `src/db/index.js`) para o fuso não trocar o dia.
@@ -149,7 +149,7 @@ POST /api/auth/login
 
 ## 5. Formato de erro
 
-Todas as respostas de erro usam **o mesmo corpo** (é o que `http.ts` lê):
+Todas as respostas de erro usam **o mesmo corpo** (é o que `http.js` lê):
 
 ```json
 { "erro": "Mensagem em português, pronta para mostrar ao usuário." }
@@ -196,7 +196,7 @@ Convenções:
 - `:escolaId` é sempre validado contra o usuário (ver [seção 4](#4-autenticação-e-permissões)).
 - Coluna **Perfis**: `A` = administrador, `P` = professor, `Al` = aluno (somente os próprios dados).
 - Respostas de criação: `201` com o objeto criado. Respostas sem conteúdo útil: `204`.
-- Tipos citados (`Aluno`, `Turma`...) estão em `frontend/src/types/index.ts`; tipos de entrada (`AlunoInput`, `TurmaInput`...) estão nos services.
+- Tipos citados (`Aluno`, `Turma`...) estão em `frontend/src/types/index.js`; os corpos de entrada estão descritos nos comentários de cada função dos services.
 
 ### Resumo (47 endpoints)
 
@@ -421,7 +421,7 @@ Resposta: `Graduacao` com `faixaAnteriorId` preenchida pelo servidor.
 
 `PATCH .../tecnicas/reordenar`: `{ "categoriaId": "…", "ids": ["idTec2", "idTec1", "idTec3"] }`
 
-> **Decisão:** a API recebe sempre a lista completa (`ids`). Os botões de subir e descer da tela montam essa lista trocando o item com o vizinho (`moverNaLista` em `frontend/src/services/curriculoService.ts`) e chamam `reordenarCategorias` ou `reordenarTecnicas`. Lista incompleta, repetida ou com itens de outro grupo responde `400`.
+> **Decisão:** a API recebe sempre a lista completa (`ids`). Os botões de subir e descer da tela montam essa lista trocando o item com o vizinho (`moverNaLista` em `frontend/src/services/curriculoService.js`) e chamam `reordenarCategorias` ou `reordenarTecnicas`. Lista incompleta, repetida ou com itens de outro grupo responde `400`.
 
 ### 7.9 Acompanhamento técnico (`tecnicasAlunoService`)
 
@@ -632,7 +632,7 @@ O Prisma é usado **para controlar as migrações** do banco. As consultas da AP
 - `src/routes/auth.js`: `POST /api/auth/login` (bcrypt + JWT com `sub`, `perfil`, `escolaId`, `alunoId`) e `GET /api/auth/me` (relê o usuário e recusa inativos).
 - `src/middleware/auth.js`: `autenticar` (exige `Authorization: Bearer`, define `req.usuario`) e `exigirPerfil(...perfis)`.
 - `src/middleware/escola.js`: `acessoEscola` (valida o `escolaId` da URL contra o token), `alunoSomenteLeitura` e as funções que limitam o perfil aluno aos próprios dados. Todas as rotas `/api/escolas/:escolaId/...` passam por eles.
-- No front, `AuthContext` guarda `{ token, usuario }` no `sessionStorage`, envia o token por `services/http.ts`, valida a sessão com `/auth/me` ao recarregar e volta ao login em qualquer `401`.
+- No front, `AuthContext` guarda `{ token, usuario }` no `sessionStorage`, envia o token por `services/http.js`, valida a sessão com `/auth/me` ao recarregar e volta ao login em qualquer `401`.
 
 ### Testes
 

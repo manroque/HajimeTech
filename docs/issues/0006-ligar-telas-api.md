@@ -22,8 +22,8 @@ Só o login usava a API. Todas as outras telas liam e gravavam dados simulados n
 ## O que foi feito
 
 * Cada função dos services passou a chamar a rota real correspondente, **mantendo a mesma assinatura**. Por isso nenhuma tela precisou mudar a forma de buscar dados.
-* `services/http.ts` ganhou `consulta()`, que monta a query string ignorando valores vazios, e `daEscola()`, que gera o prefixo `/escolas/:escolaId`. Também passou a tratar respostas `204` sem corpo.
-* `ErroApi` foi para `services/erros.ts`, separado do cliente HTTP.
+* `services/http.js` ganhou `consulta()`, que monta a query string ignorando valores vazios, e `daEscola()`, que gera o prefixo `/escolas/:escolaId`. Também passou a tratar respostas `204` sem corpo.
+* `ErroApi` foi para `services/erros.js`, separado do cliente HTTP.
 * `services/mockDb.ts` foi removido, junto com o botão "Restaurar dados de exemplo" do menu e a função `definirUsuarioSessao` do `AuthContext`.
 * A tela de Currículo passou a enviar a ordem completa ao subir ou descer um item, com a nova função `moverNaLista` e as funções `reordenarCategorias` e `reordenarTecnicas`, seguindo a decisão registrada no `backend/README.md`.
 * A pasta `frontend/src/mocks` continua existindo, mas só como fonte do `database/seed.sql` (`npm run gerar-seed`). As telas não usam mais esses dados.
@@ -42,13 +42,13 @@ O front já chama as rotas abaixo. Enquanto elas não forem implementadas, a tel
 
 ## Arquivos alterados
 
-* `frontend/src/services/http.ts`, `erros.ts` (novo), `index.ts`
-* `frontend/src/services/cadastrosService.ts`, `alunosService.ts`, `curriculoService.ts`, `desempenhoService.ts`, `dashboardService.ts`
+* `frontend/src/services/http.js`, `erros.js` (novo), `index.js`
+* `frontend/src/services/cadastrosService.js`, `alunosService.js`, `curriculoService.js`, `desempenhoService.js`, `dashboardService.js`
 * `frontend/src/services/mockDb.ts` (removido)
-* `frontend/src/contexts/AuthContext.tsx`
-* `frontend/src/components/layout/AppLayout.tsx` e `AppLayout.module.css`
-* `frontend/src/pages/CurriculoPage.tsx`, `FrequenciaPage.tsx`
-* `frontend/src/utils/formatacao.ts`, `frontend/src/types/index.ts`, `frontend/src/mocks/index.ts`, `frontend/src/mocks/faixas.ts` (comentários)
+* `frontend/src/contexts/AuthContext.jsx`
+* `frontend/src/components/layout/AppLayout.jsx` e `AppLayout.module.css`
+* `frontend/src/pages/CurriculoPage.jsx`, `FrequenciaPage.jsx`
+* `frontend/src/utils/formatacao.js`, `frontend/src/types/index.js`, `frontend/src/mocks/index.js`, `frontend/src/mocks/faixas.js` (comentários)
 
 ## Como testar
 
@@ -62,7 +62,7 @@ O front já chama as rotas abaixo. Enquanto elas não forem implementadas, a tel
 * [x] Nenhuma tela usa dados simulados
 * [x] `mockDb.ts` removido
 * [x] Todas as telas carregam com os três perfis (verificado chamada a chamada contra a API)
-* [x] Typecheck e build de produção do front passando
+* [x] Build de produção do front passando
 
 ## Relacionadas
 

@@ -17,11 +17,11 @@ Não existe tela para cadastrar professores nem para criar o acesso de um aluno.
 
 ## Proposta
 
-1. Criar `frontend/src/pages/UsuariosPage.tsx`, no padrão das outras telas (`CabecalhoPagina`, tabela, `Modal` para o formulário, `Confirmacao` para desativar).
-2. Criar `usuariosService.listar`, `criar` e `definirAtivo` em `frontend/src/services/cadastrosService.ts` (o objeto `usuariosService` já existe).
-3. Registrar a rota `/usuarios` em `frontend/src/AppRoutes.tsx` e o item "Usuários" no grupo "Academia" do menu (`components/layout/AppLayout.tsx`), visível para administrador e professor.
-4. No perfil do aluno (`components/PerfilAluno.tsx`), um botão "Criar acesso" para gerar o login do aluno, quando ele ainda não tiver um.
-5. Acrescentar a permissão `gerenciarUsuarios` em `frontend/src/utils/permissoes.ts`.
+1. Criar `frontend/src/pages/UsuariosPage.jsx`, no padrão das outras telas (`CabecalhoPagina`, tabela, `Modal` para o formulário, `Confirmacao` para desativar).
+2. Criar `usuariosService.listar`, `criar` e `definirAtivo` em `frontend/src/services/cadastrosService.js` (o objeto `usuariosService` já existe).
+3. Registrar a rota `/usuarios` em `frontend/src/AppRoutes.jsx` e o item "Usuários" no grupo "Academia" do menu (`components/layout/AppLayout.jsx`), visível para administrador e professor.
+4. No perfil do aluno (`components/PerfilAluno.jsx`), um botão "Criar acesso" para gerar o login do aluno, quando ele ainda não tiver um.
+5. Acrescentar a permissão `gerenciarUsuarios` em `frontend/src/utils/permissoes.js`.
 6. Formulário com validação: nome, email, perfil e senha inicial (mínimo de 8 caracteres).
 
 ## Critérios de aceite
