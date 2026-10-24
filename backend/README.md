@@ -1,12 +1,27 @@
 # Backend do HajimeTech
 
-> **Status:** a **autenticação** (`POST /api/auth/login` e `GET /api/auth/me`, sobre o modelo de `prisma/schema.prisma`) está implementada e integrada ao front. Os demais endpoints ainda **não** foram implementados: o restante do front funciona com dados simulados. Este documento é o **contrato** que a API real deve cumprir para substituir a simulação sem alterar nenhuma tela.
+> **Status:** a base da API está pronta em `src/routes`, sobre o modelo de `prisma/schema.prisma`: autenticação, escopo por escola, permissões, leitura de todos os dados e a maior parte das gravações. O front já chama todas as rotas do contrato. As rotas da tabela "Pendências" abaixo são tarefas do grupo e ainda respondem `404`.
+
+### Pendências
+
+Cada pendência tem uma issue com as regras, os arquivos e os critérios de aceite. O lugar exato no código está marcado com um comentário `PENDENTE`.
+
+| Pendência | Rotas | Onde implementar |
+|---|---|---|
+| Cadastro de escolas | `POST /api/escolas`, `PUT /api/escolas/:id`, `PATCH /api/escolas/:id/ativo` | `src/routes/escolas.js` |
+| Editar e desativar turma | `PUT .../turmas/:id`, `PATCH .../turmas/:id/ativo` | `src/routes/turmas.js` |
+| Reordenar o currículo | `PATCH .../curriculo/categorias/reordenar`, `PATCH .../curriculo/tecnicas/reordenar` | `src/routes/curriculo.js` |
+| Registrar avaliação | `POST .../avaliacoes` | `src/routes/avaliacoes.js` |
+| Premiações | `POST`, `PUT` e `PATCH .../premiacoes`; `POST` e `DELETE .../premiacoes-aluno` | `src/routes/premiacoes.js` |
+| Usuários e critérios de avaliação | rotas novas (ver a issue) | `src/routes` |
+
+A lista atualizada, com os números das issues, está em [`docs/issues`](../docs/issues/README.md).
 
 ## Sumário
 
 1. [Situação atual](#1-situação-atual)
-2. [Protótipo antigo em `backend/src`](#2-protótipo-antigo-em-backendsrc)
-3. [Guia de integração com o front-end](#3-guia-de-integração-com-o-front-end)
+2. [Estrutura do código](#2-estrutura-do-código)
+3. [Como o front consome a API](#3-como-o-front-consome-a-api)
 4. [Autenticação e permissões](#4-autenticação-e-permissões)
 5. [Formato de erro](#5-formato-de-erro)
 6. [Regras de negócio que a API deve garantir](#6-regras-de-negócio-que-a-api-deve-garantir)
@@ -18,91 +33,69 @@
 ## 1. Situação atual
 
 ```
-Telas (React) ──► frontend/src/services/*.ts ──► mockDb.ts (sessionStorage)
-                          │
-                          └── (futuro) http.ts ──► API REST ──► PostgreSQL (prisma/schema.prisma)
+Telas (React) ──► frontend/src/services/*.ts ──► http.ts ──► API REST (Express) ──► PostgreSQL
+                                                                                   (prisma/migrations)
 ```
 
-- As telas **só** acessam dados pela camada `frontend/src/services` (`alunosService`, `turmasService`, `curriculoService`, `dashboardService` etc.).
-- Hoje cada função de service executa `simular(() => ...)`, que lê/escreve num "banco" em memória (`frontend/src/services/mockDb.ts`), persistido no `sessionStorage` do navegador. Os dados iniciais vêm de `frontend/src/mocks`.
-- Cada função tem um comentário `INTEGRAÇÃO BACKEND: MÉTODO /api/...` indicando o endpoint que a substituirá. A [seção 7](#7-endpoints) consolida todos eles.
-- O modelo de dados oficial é **`backend/prisma/schema.prisma`**, versionado em `backend/prisma/migrations` (veja `database/README.md`), e os tipos do front (`frontend/src/types/index.ts`) espelham esse modelo em `camelCase`.
-- O `mockDb.ts` já simula o comportamento esperado da API: latência, cópia dos dados, erros `403`/`404`/`400`/`422` com mensagem em português.
+- As telas **só** acessam dados pela camada `frontend/src/services` (`alunosService`, `turmasService`, `curriculoService`, `dashboardService` etc.). Cada função chama uma rota da [seção 7](#7-endpoints).
+- A API usa SQL com o driver `pg` (`src/db/index.js`). O Prisma cuida **só das migrações** do banco.
+- O modelo de dados oficial é **`prisma/schema.prisma`**, versionado em `prisma/migrations` (veja `database/README.md`). Os tipos do front (`frontend/src/types/index.ts`) espelham esse modelo em `camelCase`.
+- Os dados de demonstração vêm de `database/seed.sql`, gerado a partir de `frontend/src/mocks` pelo script `npm run gerar-seed` (no front).
 
-## 2. Protótipo antigo em `backend/src`
+## 2. Estrutura do código
 
-A pasta `backend/` contém um **protótipo anterior** em Express + `pg` (`src/app.js`, `src/routes/*.js`, `tests/curriculo.test.js`), escrito para um schema antigo que já foi removido. Ele foi **mantido apenas como referência** e **não é compatível** com o front-end atual nem com o modelo atual (`prisma/schema.prisma`). Para reaproveitá-lo, é preciso alinhá-lo ao novo modelo. Principais diferenças:
+```text
+backend/src/
+├── app.js                 ← monta as rotas e o tratamento de erros
+├── server.js              ← sobe o servidor (porta PORT)
+├── db/index.js            ← conexão (pool), datas como texto e função transacao()
+├── lib/
+│   ├── http.js            ← erros HTTP (400, 403, 404, 422), validações e wrapper rota()
+│   ├── mapeadores.js      ← linhas do banco (snake_case) → tipos do front (camelCase)
+│   └── datas.js           ← datas AAAA-MM-DD no fuso local
+├── middleware/
+│   ├── auth.js            ← autenticar (token JWT) e exigirPerfil(...)
+│   └── escola.js          ← acessoEscola, aluno somente leitura e "só os próprios dados"
+└── routes/
+    ├── auth.js            ← login e sessão
+    ├── faixas.js          ← /api/faixas
+    ├── escolas.js         ← /api/escolas e monta todas as rotas /api/escolas/:escolaId/...
+    ├── turmas.js, alunos.js, frequencias.js, graduacoes.js
+    ├── curriculo.js       ← categorias, técnicas e a lista geral de técnicas
+    ├── avaliacoes.js      ← critérios e avaliações
+    ├── premiacoes.js      ← tipos de premiação e premiações concedidas
+    └── dashboard.js       ← indicadores do painel e dos relatórios
+```
 
-| Tema | Protótipo antigo (rotas; schema antigo removido) | Modelo atual (`prisma/schema.prisma` + services) |
-|---|---|---|
-| Unidade | Tabela `academias` (só `nome`) | Tabela `escolas` (nome, cidade, endereço, telefone, responsável, `ativo`) |
-| Faixas | Texto livre (`alunos.faixa_atual = 'Branca'`) | Tabela global `faixas` com slug (`faixa_id = 'branca'`), ordem, cores e `conteudo_definido` |
-| Usuários | `papel IN ('admin','professor')`, `academia_id` obrigatório, sem senha | Enum `perfil_usuario` (`administrador`, `professor`, `aluno`), `escola_id` nulo para admin global, `senha_hash`, `aluno_id` |
-| Turmas | `horario` e `faixa_etaria` em texto | `idade_minima` / `idade_maxima`, `professor_id`, `ativo` e tabela `horarios_turma` (vários horários) |
-| Alunos | Sem `responsavel` nem `data_ingresso` | Com `responsavel`, `data_ingresso`; faixa só muda por graduação |
-| Graduações | `faixa_anterior` enviada pelo cliente, `data_graduacao`, textos | `faixa_anterior_id` calculada pelo servidor, `nova_faixa_id`, `data`, FKs para `faixas` |
-| Currículo | `curriculo_categorias` (com `kyu_dan`, sem `ativo`) e `curriculo_itens` (sem escola, sem descrição) | `categorias_curriculo` e `tecnicas`, ambas com `escola_id`, `descricao`, `ordem ≥ 1`, `ativo` |
-| Excluir categoria | **Hard delete** (`DELETE` + `ON DELETE CASCADE` apaga as técnicas) | **Desativação lógica** da categoria e de suas técnicas |
-| Marrom/Preta | Sem bloqueio | Gatilho no banco + API devolve `422` |
-| Acompanhamento técnico | `acompanhamento_tecnico` com técnica em texto livre e níveis `A desenvolver / Em evolução / Consolidada`; sempre insere | `tecnicas_aluno` com FK `tecnica_id`, enum `iniciante / em_desenvolvimento / domina`, *upsert* por (aluno, técnica) |
-| Avaliações e premiações | Não existem | `criterios_avaliacao`, `avaliacoes`, `avaliacao_notas`, `premiacoes`, `premiacoes_aluno` |
-| Rotas | Planas: `/api/alunos`, `/api/turmas`, `/api/curriculo`... | Aninhadas por escola: `/api/escolas/:escolaId/...` |
-| Identificação da escola | Cabeçalho `x-academia-id` (padrão: academia demo) | `escolaId` na rota, validado contra o usuário do token |
-| Perfil do usuário | Cabeçalho `x-user-role` (padrão: `admin`, **inseguro**) | Vem do token JWT; verificado no servidor |
-| Autenticação | Inexistente | `POST /api/auth/login` → JWT |
-| Isolamento | Só `academia_id` na consulta | `escola_id` + FKs compostas `(id, escola_id)` |
-| Frequência | `POST` de um aluno por vez | `PUT` em lote por turma e data (upsert) |
-| Reordenação | `PATCH /itens/reordenar { itens: [{ id, ordem }] }` | `PATCH .../reordenar { ids: [...] }` (servidor renumera) |
-| Dashboard | `{ total_alunos, presencas_30_dias, faixas, turmas }` | Objeto `Dashboard` completo (ver [7.12](#712-dashboard)) |
-| Formato de resposta | `snake_case`, linhas cruas do banco | `camelCase` conforme `frontend/src/types` |
-| Formato de erro | `{ "error": "..." }`, muitas vezes `500` genérico | `{ "erro": "..." }` com status adequado |
-| CORS | `origin: true` (ignora `CORS_ORIGIN` do `.env.example`) | Restringir à origem do front |
+**Como uma requisição passa pela API** (`GET /api/escolas/:escolaId/alunos`):
 
-O arquivo `frontend/src/services/api.js` é o cliente antigo desse protótipo (usa `x-academia-id`) e também está obsoleto.
+1. `autenticar` confere o token e preenche `req.usuario`.
+2. `acessoEscola` confere o `escolaId` da URL: professor e aluno só acessam a própria escola (`403`); escola inexistente responde `404`.
+3. `alunoSomenteLeitura` recusa qualquer escrita do perfil aluno (`403`).
+4. A rota aplica `exigirPerfil(...)` quando necessário, valida a entrada e consulta o banco **sempre filtrando por `escola_id`**.
+5. Erros lançados com `ErroHttp` viram `{ "erro": "..." }` com o status certo no `app.js`.
 
----
+## 3. Como o front consome a API
 
-## 3. Guia de integração com o front-end
-
-1. **Configure a URL da API** criando `frontend/.env`:
+1. **URL da API** em `frontend/.env`:
 
    ```env
    VITE_API_URL=http://localhost:3000/api
    ```
 
-2. **Use o cliente pronto** `frontend/src/services/http.ts`. Ele já:
+2. **Cliente** `frontend/src/services/http.ts`:
    - prefixa `VITE_API_URL`;
    - envia `Content-Type: application/json` e `Authorization: Bearer <token>` (definido por `definirToken(token)` após o login);
-   - converte respostas de erro em `ErroApi(status, dados.erro)`, que as telas já sabem exibir.
+   - converte respostas de erro em `ErroApi(status, dados.erro)`, que as telas já sabem exibir;
+   - em qualquer `401`, devolve o usuário para a tela de login.
 
-3. **Troque o corpo de cada função**, mantendo nome, parâmetros e tipo de retorno. Exemplo:
-
-   ```ts
-   // Antes (mock)
-   listar(escolaId: string, filtro: FiltroAlunos = {}): Promise<Aluno[]> {
-     return simular(() => db().alunos.filter(/* ... */));
-   }
-
-   // Depois (API real)
-   listar(escolaId: string, filtro: FiltroAlunos = {}): Promise<Aluno[]> {
-     const qs = new URLSearchParams();
-     if (filtro.busca) qs.set('busca', filtro.busca);
-     if (filtro.turmaId) qs.set('turmaId', filtro.turmaId);
-     if (filtro.faixaId) qs.set('faixaId', filtro.faixaId);
-     if (filtro.incluirInativos) qs.set('incluirInativos', 'true');
-     return http.get<Aluno[]>(`/escolas/${escolaId}/alunos?${qs}`);
-   }
-   ```
-
-4. **Autenticação**: `authService.entrar(usuarioId)` passa a ser `entrar(email, senha)` chamando `POST /api/auth/login`, guardando o token com `definirToken`. `authService.listarUsuariosDemo()` **não tem equivalente** na API (existe só para o login simulado) e deve ser removido junto com a tela de escolha de usuário. `definirUsuarioSessao` / `exigirPerfil` deixam de ser necessários (a permissão passa a ser verificada no servidor).
-
-5. **Formato das respostas**: a API deve devolver objetos exatamente como os tipos de `frontend/src/types/index.ts` (**camelCase**, datas `AAAA-MM-DD`, data-hora ISO 8601, horas `HH:MM`). Se preferir devolver `snake_case`, faça a conversão dentro do service. Atenção a detalhes:
-   - `Turma.horarios` e `Avaliacao.notas` são **listas aninhadas** (juntar `horarios_turma` e `avaliacao_notas`).
-   - `TIME` do PostgreSQL vem como `HH:MM:SS` → devolver `HH:MM`.
-   - O driver `pg` converte `DATE` em `Date` do JavaScript (risco de mudar o dia por fuso). Recomenda-se `pg.types.setTypeParser(1082, v => v)` para manter a string.
+3. **Formato das respostas:** a API devolve objetos exatamente como os tipos de `frontend/src/types/index.ts` (**camelCase**, datas `AAAA-MM-DD`, data e hora ISO 8601, horas `HH:MM`). A conversão fica em `src/lib/mapeadores.js`. Detalhes:
+   - `Turma.horarios` e `Avaliacao.notas` são **listas aninhadas** (juntam `horarios_turma` e `avaliacao_notas`).
+   - `TIME` do PostgreSQL vem como `HH:MM:SS` e é devolvido como `HH:MM`.
+   - `DATE` é lido como texto (`pg.types.setTypeParser(1082, ...)` em `src/db/index.js`) para o fuso não trocar o dia.
    - Campos de texto opcionais são strings vazias (`''`), não `null`, exceto onde o tipo aceita `null` (`turmaId`, `idadeMaxima`, `professorId`, `avaliadorId`, `escolaId`/`alunoId` do usuário).
 
-6. **Ao final**, apague `frontend/src/services/mockDb.ts`, a pasta `frontend/src/mocks` (se não for mais usada para gerar o seed) e o `restaurarDadosExemplo` exportado em `services/index.ts`. Mova `ErroApi` para `http.ts`.
+4. **Reordenação no currículo:** os botões de subir e descer montam no front a lista completa na nova ordem (função `moverNaLista`) e chamam `PATCH .../reordenar { ids }`. O servidor confere se a lista tem exatamente os itens ativos do grupo e renumera `ordem` como 1, 2, 3...
 
 ---
 
@@ -150,7 +143,7 @@ POST /api/auth/login
 - Edição de currículo (categorias e técnicas): **só `administrador` e `professor`** → senão `403`.
 - Criar/editar/desativar escolas: **só `administrador`** → senão `403`.
 - `GET /api/escolas`: administrador recebe todas; professor/aluno recebem apenas a sua.
-- Mensagem padrão de `403`: `"Você não tem permissão para realizar esta ação."` (a mesma do mock).
+- Mensagem padrão de `403`: `"Você não tem permissão para realizar esta ação."`.
 
 ---
 
@@ -168,7 +161,7 @@ Todas as respostas de erro usam **o mesmo corpo** (é o que `http.ts` lê):
 | `401` | Sem token, token inválido/expirado, login incorreto | `"E-mail ou senha incorretos."` |
 | `403` | Perfil sem permissão ou escola de outro usuário | `"Você não tem permissão para realizar esta ação."` |
 | `404` | Registro inexistente ou de outra escola | `"Aluno não encontrado(a)."` |
-| `409` *(opcional)* | Conflito de unicidade (ex.: e-mail já usado) | `"Já existe um usuário com este e-mail."` |
+| `409` *(opcional)* | Conflito de unicidade (ex.: email já usado) | `"Já existe um usuário com este email."` |
 | `422` | Regra de negócio violada | `"O conteúdo da faixa Marrom ainda não foi definido pela academia."` |
 | `500` | Erro inesperado (sem detalhes internos em produção) | `"Erro interno. Tente novamente."` |
 
@@ -180,7 +173,7 @@ Todas as respostas de erro usam **o mesmo corpo** (é o que `http.ts` lê):
 |---|---|---|
 | 1 | **Nada de apagar alunos, técnicas, categorias, turmas, escolas, premiações.** | "Excluir" = `UPDATE ... SET ativo = false`. `DELETE /alunos/:id` faz soft delete. |
 | 2 | Excluir categoria desativa **também** suas técnicas e renumera a `ordem` das categorias ativas restantes da faixa. | Uma transação. |
-| 3 | **Graduação**: grava `faixa_anterior_id` = faixa atual do aluno (calculada no servidor), `nova_faixa_id`, data e observações, e atualiza `alunos.faixa_id`. | Uma transação (`BEGIN` → `INSERT graduacoes` → `UPDATE alunos` → `COMMIT`). A nova faixa deve ser **superior** à atual na progressão (`faixas.ordem` maior); caso contrário → `400` (o mock já aplica essa regra). |
+| 3 | **Graduação**: grava `faixa_anterior_id` = faixa atual do aluno (calculada no servidor), `nova_faixa_id`, data e observações, e atualiza `alunos.faixa_id`. | Uma transação (`BEGIN` → `INSERT graduacoes` → `UPDATE alunos` → `COMMIT`). A nova faixa deve ser **superior** à atual na progressão (`faixas.ordem` maior); caso contrário → `400`. |
 | 4 | A faixa do aluno **não muda** pelo `PUT /alunos/:id`. | Ignorar/recusar `faixaId` no corpo; a faixa só é informada na criação. |
 | 5 | **Sem currículo em Marrom/Preta** (`faixas.conteudo_definido = false`). | Verificar antes de criar categoria/técnica e responder `422`. O gatilho do banco é a última barreira (converter o erro dele em `422`). |
 | 6 | **Reordenação** renumera `ordem` como 1, 2, 3... dentro do grupo (categorias da mesma escola+faixa; técnicas da mesma categoria). | Receber a lista de ids na nova ordem e atualizar numa transação. Ids de outro grupo/escola → `400`. |
@@ -226,7 +219,7 @@ Convenções:
 
 | Método | Rota | Descrição | Perfis | Service |
 |---|---|---|---|---|
-| POST | `/api/auth/login` | Login por e-mail e senha → `{ token, usuario }` | público | `authService.entrar` |
+| POST | `/api/auth/login` | Login por email e senha → `{ token, usuario }` | público | `authService.entrar` |
 
 Exemplo na [seção 4](#login). `authService.listarUsuariosDemo` **não tem endpoint** (só existe no protótipo).
 
@@ -428,7 +421,7 @@ Resposta: `Graduacao` com `faixaAnteriorId` preenchida pelo servidor.
 
 `PATCH .../tecnicas/reordenar`: `{ "categoriaId": "…", "ids": ["idTec2", "idTec1", "idTec3"] }`
 
-> Os services `moverCategoria(escolaId, id, 'cima' | 'baixo')` e `moverTecnica(...)` recebem **um id e uma direção**, não a lista. Na integração, o service deve montar a lista reordenada a partir do currículo já carregado (troca com o vizinho) antes de chamar o endpoint. Outra opção é a equipe pode optar por um corpo `{ "id": "…", "direcao": "cima" }`. Decidir e documentar aqui.
+> **Decisão:** a API recebe sempre a lista completa (`ids`). Os botões de subir e descer da tela montam essa lista trocando o item com o vizinho (`moverNaLista` em `frontend/src/services/curriculoService.ts`) e chamam `reordenarCategorias` ou `reordenarTecnicas`. Lista incompleta, repetida ou com itens de outro grupo responde `400`.
 
 ### 7.9 Acompanhamento técnico (`tecnicasAlunoService`)
 
@@ -521,7 +514,7 @@ A média exibida é calculada no front (`mediaAvaliacao`: média simples das not
 
 Parâmetros (`FiltroDashboard`): `periodoDias` (ex.: 30, 90, 180) e `turmaId` (vazio = todas as turmas).
 
-Regras de cálculo (espelham o mock em `dashboardService.ts`):
+Regras de cálculo (implementadas em `src/routes/dashboard.js`):
 
 - **Período atual** = `(hoje − periodoDias, hoje]`; **período anterior** = mesmo tamanho imediatamente antes.
 - `IndicadorComparado`: `{ atual, anterior, variacao }`, com `variacao = (atual − anterior) / anterior × 100`, ou `null` se `anterior = 0`.
@@ -580,7 +573,7 @@ Resposta:
 
 ## 8. Como rodar o backend
 
-### Pré-requisitos
+### Requisitos
 
 - Node.js 20+ e npm.
 - PostgreSQL rodando (o jeito mais simples: `cd database && docker compose up -d`, que sobe vazio). As tabelas são criadas pelas migrações do Prisma (abaixo).
@@ -597,6 +590,7 @@ Copie `backend/.env.example` para `backend/.env`:
 | `JWT_EXPIRES_IN` | `8h` | Validade do token |
 | `CORS_ORIGIN` | `http://localhost:5173` | Origem permitida (front em desenvolvimento) |
 | `NODE_ENV` | `development` | Ambiente |
+| `DB_POOL_MAX` | `10` | Máximo de conexões simultâneas com o banco (opcional) |
 
 ### Instalação
 
@@ -636,12 +630,33 @@ O Prisma é usado **para controlar as migrações** do banco. As consultas da AP
 ### Autenticação implementada
 
 - `src/routes/auth.js`: `POST /api/auth/login` (bcrypt + JWT com `sub`, `perfil`, `escolaId`, `alunoId`) e `GET /api/auth/me` (relê o usuário e recusa inativos).
-- `src/middleware/auth.js`: `autenticar` (exige `Authorization: Bearer`, define `req.usuario`) e `exigirPerfil(...perfis)`. Use-os nas novas rotas `/api/escolas/:escolaId/...`; as rotas do protótipo antigo ainda não os usam.
+- `src/middleware/auth.js`: `autenticar` (exige `Authorization: Bearer`, define `req.usuario`) e `exigirPerfil(...perfis)`.
+- `src/middleware/escola.js`: `acessoEscola` (valida o `escolaId` da URL contra o token), `alunoSomenteLeitura` e as funções que limitam o perfil aluno aos próprios dados. Todas as rotas `/api/escolas/:escolaId/...` passam por eles.
 - No front, `AuthContext` guarda `{ token, usuario }` no `sessionStorage`, envia o token por `services/http.ts`, valida a sessão com `/auth/me` ao recarregar e volta ao login em qualquer `401`.
 
 ### Testes
 
-`npm test` roda Jest + Supertest. `tests/auth.test.js` cobre o login sem precisar de banco (o `pool` é simulado). Próximos passos sugeridos: testes de integração por endpoint cobrindo `403` por perfil, isolamento entre as duas escolas do seed e as regras da [seção 6](#6-regras-de-negócio-que-a-api-deve-garantir).
+`npm test` roda Jest + Supertest.
+
+| Arquivo | O que cobre | Precisa de banco? |
+|---|---|---|
+| `tests/auth.test.js` | Login, sessão, token inválido ou expirado, `403` por perfil, acesso a outra escola | Não (o `pool` é simulado) |
+| `tests/curriculo.test.js` | Rota de saúde e exigência de token | Não |
+| `tests/integracao.test.js` | Fluxo com o seed: isolamento entre as duas escolas, perfil aluno só com os próprios dados, exclusão lógica, cadastro de turma, Marrom sem currículo (`422`), desativação de técnica, graduação só para frente, chamada sem duplicar e painel | **Sim** |
+
+Cada pendência da lista acima inclui, nos critérios de aceite, os testes de integração da sua parte.
+
+Os testes de integração só rodam quando `TEST_DATABASE_URL` aponta para um banco com as migrações e o seed aplicados. Sem a variável, eles são pulados. Eles **alteram dados** (criam alunos, graduações etc.), então use um banco de desenvolvimento:
+
+```bash
+cd database && docker compose up -d
+cd ../backend
+TEST_DATABASE_URL=postgresql://hajimetech:hajimetech@localhost:5433/hajimetech npm test
+```
+
+No PowerShell: `$env:TEST_DATABASE_URL="postgresql://hajimetech:hajimetech@localhost:5433/hajimetech"; npm test`.
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda tudo isso a cada pull request, com um PostgreSQL próprio.
 
 ### Deploy
 

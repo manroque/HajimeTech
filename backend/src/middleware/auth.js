@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 
-export const MSG_SEM_PERMISSAO = 'Você não tem permissão para realizar esta ação.';
+import { MSG_SEM_PERMISSAO } from '../lib/http.js';
+
+export { MSG_SEM_PERMISSAO };
 
 export function segredoJwt() {
   const segredo = process.env.JWT_SECRET;
