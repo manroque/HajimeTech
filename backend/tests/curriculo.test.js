@@ -9,7 +9,7 @@ test('health retorna ok', async () => {
 });
 
 test('currículo sem token → 401', async () => {
-  const r = await request(app).get('/api/curriculo?faixa=Azul');
+  const r = await request(app).get('/api/escolas/00000001-0000-4000-8000-000000000001/curriculo?faixaId=azul');
 
   expect(r.statusCode).toBe(401);
 });
