@@ -23,7 +23,7 @@ npm run db:migrate -- --name descricao-da-mudanca   # gera prisma/migrations/<da
 
 ### Como o `seed.sql` é gerado
 
-O `seed.sql` é produzido a partir dos mesmos mocks que o front-end usa (`frontend/src/mocks`), garantindo que banco e protótipo tenham **os mesmos IDs, nomes e quantidades**:
+O `seed.sql` é produzido a partir dos dados de demonstração em `frontend/src/mocks`, com **IDs fixos**, para que os testes e a documentação possam citar registros conhecidos:
 
 ```bash
 cd frontend
@@ -409,7 +409,7 @@ Todos os nomes, telefones e endereços são **fictícios**.
 
 ### Usuários de demonstração
 
-No protótipo o login é **simulado** (escolhe-se o usuário numa lista). No backend real o acesso será por e-mail e senha.
+O acesso é por email e senha. Todos os usuários de demonstração entram com a senha `hajime123`.
 
 | Nome | E-mail | Perfil | Escola |
 |---|---|---|---|

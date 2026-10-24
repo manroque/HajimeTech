@@ -1,406 +1,322 @@
-# HajimeTech: PI2
+# HajimeTech
 
-Sistema web de gestão e acompanhamento de alunos para uma academia de judô.
+Sistema web de gestão e acompanhamento de alunos para academias de judô.
 
-O HajimeTech foi desenvolvido como projeto acadêmico para auxiliar na organização de alunos, turmas, frequência, graduações e currículo técnico da academia.
+O HajimeTech foi desenvolvido como projeto acadêmico (PI2) para auxiliar na organização de alunos, turmas, frequência, graduações e currículo técnico da academia. O sistema atende mais de uma escola, e cada escola enxerga apenas os próprios dados.
 
-> **Sumário:** [1. Sobre](#1--sobre-o-hajimetech) · [2. Objetivo](#2--objetivo) · [3. Currículo](#3--funcionamento-do-currículo) · [4. Funcionalidades](#4--funcionalidades) · [5. Identidade visual](#5--identidade-visual) · [6. Tecnologias](#6-️-tecnologias) · [7. Estrutura](#7--estrutura-do-projeto) · [8. Rodar o front-end](#8-️-como-rodar-o-front-end) · [9. Banco de dados](#9-️-banco-de-dados) · [10. Backend](#10--backend) · [11. Próximos passos](#11--próximos-passos)
+## Sumário
 
----
+1. [Visão geral](#1-visão-geral)
+2. [Objetivo](#2-objetivo)
+3. [Funcionamento do currículo](#3-funcionamento-do-currículo)
+4. [Funcionalidades](#4-funcionalidades)
+5. [Perfis de acesso](#5-perfis-de-acesso)
+6. [Arquitetura](#6-arquitetura)
+7. [Tecnologias](#7-tecnologias)
+8. [Estrutura do repositório](#8-estrutura-do-repositório)
+9. [Como executar](#9-como-executar)
+10. [Banco de dados](#10-banco-de-dados)
+11. [API](#11-api)
+12. [Testes e integração contínua](#12-testes-e-integração-contínua)
+13. [Identidade visual e acessibilidade](#13-identidade-visual-e-acessibilidade)
+14. [Estado do projeto e tarefas](#14-estado-do-projeto-e-tarefas)
+15. [Como contribuir](#15-como-contribuir)
+16. [Documentação complementar](#16-documentação-complementar)
 
-## 1. 🥋 Sobre o HajimeTech
+## 1. Visão geral
 
-O HajimeTech organiza alunos, turmas, frequência, graduações, avaliação de desempenho, premiações e o currículo técnico de cada faixa.
+O HajimeTech reúne em um só lugar o que a academia precisa acompanhar no dia a dia: quem são os alunos, em que turma treinam, quando vieram, como estão evoluindo no currículo da faixa, quais avaliações e premiações receberam e quais são os indicadores gerais da escola.
 
-O sistema suporta **mais de uma academia/escola de judô**. Cada aluno pertence a uma escola, e todas as informações (alunos, turmas, frequência, graduações, currículo, premiações e indicadores) são filtradas e organizadas pela escola selecionada.
+| Parte | Descrição | Situação |
+|---|---|---|
+| Frontend | Aplicação React com todas as telas, ligada à API | Pronto. Tarefas de evolução listadas na seção 14 |
+| API | Node.js com Express: autenticação, permissões, regras de negócio e painel | Base pronta. Algumas rotas de gravação são tarefas do grupo (seção 14) |
+| Banco de dados | PostgreSQL com migrations do Prisma e dados de demonstração | Pronto |
+| Qualidade | Testes de integração com banco de verdade e verificação automática a cada pull request | Pronto, com testes a ampliar junto de cada tarefa |
 
-**Situação desta entrega:**
-
-| Parte | Situação |
-|---|---|
-| Front-end (`/frontend`) | Completo e navegável, com **dados mockados** |
-| Banco de dados | Pronto: modelo e migrações Prisma (`backend/prisma`), `database/seed.sql` e DER |
-| Backend (`/backend`) | Login (e-mail e senha, JWT) implementado; demais endpoints documentados como contrato para a equipe |
-
----
-
-## 2. 🎯 Objetivo
+## 2. Objetivo
 
 Centralizar as principais informações da academia em um sistema web simples, organizado e acessível.
 
 O sistema permite acompanhar:
 
-- alunos cadastrados;
-- turmas e horários;
-- frequência;
-- graduações;
-- evolução técnica;
-- currículo de cada faixa;
-- indicadores da academia.
+* alunos cadastrados;
+* turmas e horários;
+* frequência;
+* graduações;
+* evolução técnica;
+* currículo de cada faixa;
+* avaliações de desempenho e premiações;
+* indicadores da academia.
 
-Além disso, esta versão acrescenta avaliações de desempenho e premiações, além do suporte a várias escolas.
-
----
-
-## 3. 🥋 Funcionamento do currículo
+## 3. Funcionamento do currículo
 
 O currículo técnico segue uma progressão de faixas:
 
-**Branca → Azul → Amarela → Laranja → Verde → Roxa → Marrom → Preta**
+**Branca, Azul, Amarela, Laranja, Verde, Roxa, Marrom e Preta**
 
 A ideia do sistema é que o aluno aprenda as técnicas correspondentes à sua faixa atual e avance para a próxima faixa após cumprir os conhecimentos definidos pela academia.
 
-Os conteúdos das faixas **Marrom e Preta ainda não estão definidos no projeto**, portanto não são inventados pelo sistema.
+Os conteúdos das faixas **Marrom e Preta ainda não estão definidos**, portanto não são inventados pelo sistema. A tela de Currículo mostra o aviso "Conteúdo ainda não definido pela academia", e a API e o banco recusam o cadastro de itens nessas faixas.
 
-O currículo pode ser organizado por:
+O currículo pode ser organizado por categorias, técnicas, ordem das técnicas e ordem das categorias. Somente administradores e professores podem fazer alterações nele.
 
-- categorias;
-- técnicas;
-- ordem das técnicas;
-- ordem das categorias.
+Outras regras do currículo:
 
-Administradores e professores podem editar o currículo.
+* As faixas Branca a Roxa trazem um currículo de exemplo baseado no Gokyo do Kodokan, que cada academia pode ajustar.
+* Técnicas e categorias nunca são apagadas, apenas desativadas, para preservar o histórico dos alunos.
+* O perfil de cada aluno mostra uma barra de progresso com a porcentagem de técnicas da faixa atual que ele já domina.
 
-**Como isso aparece no sistema:**
+## 4. Funcionalidades
 
-- Na tela **Currículo**, as faixas Marrom e Preta mostram o aviso *"Conteúdo ainda não definido pela academia"*. O front e o banco (por meio de um gatilho criado na migração inicial) recusam o cadastro de itens nessas faixas.
-- As faixas Branca a Roxa trazem um **currículo de exemplo** baseado no Gokyo do Kodokan, que cada academia pode editar à vontade.
-- Técnicas e categorias nunca são apagadas, apenas **desativadas**, para preservar o histórico dos alunos.
-- Somente **administradores e professores** veem os botões de criar, editar, reordenar e desativar. O perfil Aluno vê o currículo em modo leitura.
-- O perfil de cada aluno tem uma **barra de progresso** com a porcentagem de técnicas da faixa atual que ele já domina.
-
----
-
-## 4. 📋 Funcionalidades
-
-### Escolas *(nova)*
-
-- Lista de academias cadastradas (cadastro, edição e desativação feitos pelo administrador)
-- Ao selecionar uma escola, todo o sistema passa a exibir os dados dela
-
-### Dashboard
-
-- Total de alunos ativos
-- Presenças dos últimos 30 dias
-- Distribuição de alunos por faixa
-- Distribuição de alunos por turma
-
-Novidades desta versão:
-
-- evolução da frequência semana a semana;
-- graduações recentes;
-- destaques e premiações do período;
-- os alunos que mais treinaram;
-- cartões com número grande e comparação com o período anterior (ex.: "+12% em relação ao mês anterior");
-- filtros por período (30 dias, 3 meses ou 6 meses) e por turma;
-- em cada gráfico, um título em linguagem simples, uma frase explicando o que ele mostra e tooltips sem jargão;
-- as cores reais das faixas no gráfico de distribuição por faixa.
-
-### Alunos
-
-- Cadastro de alunos
-- Edição de alunos
-- Desativação de alunos
-- Busca por nome
-- Associação com turma
-- Registro de faixa atual
-- Telefone
-- Observações
-
-> A opção "Excluir" desativa o cadastro do aluno em vez de apagar fisicamente seus dados do banco.
-
-**Perfil do aluno** *(novo)*: dados, frequência, histórico de graduações, técnicas aprendidas, avaliações, premiações, jornada de faixas e a barra de progresso do currículo da faixa atual.
-
-### Turmas
-
-- Cadastro de turmas
-- Horários
-- Faixa etária
-
-### Frequência
-
-- Seleção da data
-- Registro de presença
-- Registro de ausência
-- Atualização da presença do aluno
-
-### Graduações
-
-- Registro de graduação
-- Faixa anterior
-- Nova faixa
-- Data da graduação
-- Observações
-- Histórico de graduações
-
-### Acompanhamento técnico
-
-- Registro de técnicas por aluno
-- Nível da técnica
-- Observações
-
-Os níveis usados são **Iniciante**, **Em desenvolvimento** e **Domina**.
-
-### Currículo
-
-- Visualização do currículo por faixa
-- Criação de categorias
-- Edição de categorias
-- Exclusão de categorias
-- Criação de técnicas
-- Edição de técnicas
-- Desativação de técnicas
-- Reordenação de técnicas
-- Organização por categorias
-
-Esta versão também permite **reordenar as categorias** (botões de subir e descer).
-
-### Avaliação de desempenho *(nova)*
-
-- Avaliação individual de cada aluno nos critérios definidos pela academia: Técnica, Disciplina, Frequência e Evolução
-- Nota de 1 a 5 por critério, com um conceito em palavras (de "Precisa de atenção" a "Excelente"), e observações do professor
-- Histórico de avaliações com gráfico de evolução
-
-### Premiação *(nova)*
-
-- Cadastro de tipos de premiação (destaque do mês, maior frequência, campeonatos, evolução)
-- Vínculo da premiação ao aluno, com data e descrição
-- Exibição no perfil do aluno e no dashboard
-
-### Relatórios
-
-- Distribuição de alunos por faixa
-- Distribuição de alunos por turma
-
-Novidades desta versão: indicadores do dashboard em formato de tabela (com comparação ao período anterior), frequência semanal, graduações, premiações, alunos mais assíduos e a opção **Imprimir relatório** (também serve para salvar em PDF).
-
-### Perfis de acesso *(nova)*
-
-| Perfil | O que pode fazer |
+| Módulo | O que oferece |
 |---|---|
-| **Administrador** | Tudo, incluindo a gestão de escolas e do currículo |
-| **Professor** | Gerencia alunos, turmas, frequência, graduações, avaliações, premiações e o currículo **da sua escola** |
-| **Aluno** | Somente leitura: acompanha a própria evolução ("Minha evolução") e consulta o currículo |
+| Escolas | Lista das academias. Ao selecionar uma escola, todo o sistema passa a mostrar os dados dela |
+| Painel | Alunos ativos, presenças, comparecimento e graduações do período, com comparação ao período anterior; frequência semana a semana; alunos por faixa (com as cores reais) e por turma; graduações recentes; destaques e premiações; alunos que mais treinaram. Filtros por período e por turma |
+| Alunos | Cadastro, edição, busca por nome (ignora acentos), filtro por turma e faixa, telefone, responsável e observações. "Excluir" desativa o cadastro sem apagar o histórico |
+| Perfil do aluno | Dados, frequência, histórico de graduações, técnicas por nível, avaliações, premiações, jornada de faixas e progresso no currículo |
+| Turmas | Cadastro com faixa etária, professor responsável e vários horários por semana |
+| Frequência | Chamada por turma e data, com marcação de presença e falta e correção de chamadas anteriores |
+| Graduações | Registro da troca de faixa (a faixa anterior é guardada e a atual é atualizada) e histórico |
+| Acompanhamento técnico | Nível de cada aluno em cada técnica: Iniciante, Em desenvolvimento ou Domina, com observações |
+| Currículo | Categorias e técnicas por faixa, com criação, edição, desativação e ordenação |
+| Avaliações | Notas de 1 a 5 nos critérios da academia (Técnica, Disciplina, Frequência e Evolução), observações e gráfico de evolução |
+| Premiações | Tipos de premiação (destaque do mês, frequência, campeonato, evolução) e concessão aos alunos, exibidas no perfil e no painel |
+| Relatórios | Indicadores do painel em tabelas, distribuição por faixa e por turma, frequência semanal, graduações e premiações, com opção de impressão ou PDF |
+| Minha evolução | Área do aluno, somente leitura, com a própria evolução |
 
-O login usa **e-mail e senha** validados pela API (contas de demonstração com a senha `hajime123`, listadas na tela de entrada). A matriz completa de permissões está em [`REQUISITOS.md`](REQUISITOS.md).
+## 5. Perfis de acesso
 
----
+| Perfil | Escopo |
+|---|---|
+| Administrador | Acessa todas as escolas. Gerencia escolas, currículo e todos os cadastros |
+| Professor | Acessa a própria escola. Gerencia alunos, turmas, frequência, graduações, currículo, avaliações e premiações |
+| Aluno | Acessa a própria escola, somente leitura: "Minha evolução" e o currículo |
 
-## 🔐 Segurança e isolamento de dados
+O acesso é feito com email e senha, e a API emite um token JWT. As permissões são verificadas pelo servidor em toda requisição; o front apenas esconde o que o perfil não pode usar. A matriz completa está em [`REQUISITOS.md`](REQUISITOS.md).
 
-O backend utiliza um identificador de academia para separar os dados entre academias.
+## 6. Arquitetura
 
-As requisições utilizam o cabeçalho:
-
-```text
-x-academia-id
+```mermaid
+flowchart LR
+    U([Usuário]) --> F[Frontend<br/>React + TypeScript]
+    F -- "HTTP + JSON, token JWT" --> A[API<br/>Node.js + Express]
+    A -- "SQL, sempre filtrado por escola" --> B[(PostgreSQL)]
+    M[Migrations do Prisma] -.-> B
 ```
 
-> **Atualização desta versão:** no modelo novo, o identificador da escola fica na própria rota (`/api/escolas/:escolaId/...`) e o perfil do usuário vem do token de autenticação. Todas as tabelas têm `escola_id`, e chaves estrangeiras compostas impedem que um registro aponte para dados de outra escola. Detalhes em [`backend/README.md`](backend/README.md) e [`database/README.md`](database/README.md).
+* **Frontend em camadas:** as telas não acessam a API diretamente. Toda chamada passa por `frontend/src/services`, e os tipos de cada entidade ficam centralizados em `frontend/src/types`.
+* **API com escopo por escola:** todas as rotas de dados seguem o formato `/api/escolas/:escolaId/...`, e um middleware confere se o usuário pode acessar aquela escola.
+* **Banco versionado:** o modelo fica em `backend/prisma/schema.prisma`, e cada mudança gera uma migration. Restrições, chaves compostas por escola e gatilhos garantem a integridade dos dados.
 
----
+Os desenhos completos (camadas do front, caminho de uma requisição, permissões, modelo de dados e ambiente) estão em [`docs/arquitetura.md`](docs/arquitetura.md).
 
-## 5. 🎨 Identidade visual
+## 7. Tecnologias
 
-| Elemento | Definição |
+| Camada | Tecnologias |
 |---|---|
-| Cores principais | **Vermelho** `#C8102E`, **azul** `#1D4ED8` / `#13306E` e **branco**, com tons de apoio para fundos, bordas e estados. Todos os pares de texto e fundo atingem contraste WCAG AA. |
-| Cores das faixas | As cores reais do judô, usadas em badges e gráficos |
-| Títulos | **Dela Gothic One** (Google Fonts). O pedido era "Gothic One"; esta é a fonte disponível mais próxima com esse nome. |
-| Textos | **Montserrat** |
-| Logomarca "HajimeTech" | **Yuji Syuku** |
-| Símbolo | Uma faixa de judô em movimento ascendente, passando por degraus (as graduações) até um círculo vermelho (a meta), para transmitir acompanhamento e evolução |
+| Frontend | React 19, Vite, TypeScript, React Router, Recharts, Lucide React, CSS Modules |
+| Backend | Node.js, Express, driver `pg`, JSON Web Token, bcrypt |
+| Banco de dados | PostgreSQL 16, Prisma (migrations) |
+| Testes | Jest, Supertest |
+| Infraestrutura | Docker Compose, GitHub Actions |
+| Versionamento | Git e GitHub |
+| Deploy previsto | Render |
 
-Todos os tokens de design (cores, fontes, espaçamentos) ficam em [`frontend/src/styles/tokens.css`](frontend/src/styles/tokens.css). A interface é responsiva: no celular, o menu vira uma gaveta.
-
----
-
-## 6. 🛠️ Tecnologias
-
-### Frontend
-
-- React
-- Vite
-- JavaScript
-- Lucide React
-- CSS
-
-> **Nesta versão**, o front foi reescrito em **TypeScript**, com CSS Modules, **React Router** (navegação) e **Recharts** (gráficos). A versão anterior em JavaScript continua em `frontend/src/**/*.jsx` apenas como referência (veja [Próximos passos](#11--próximos-passos)).
-
-### Backend
-
-- Node.js
-- Express
-- JavaScript
-- REST API
-
-### Banco de dados
-
-- PostgreSQL
-
-### Testes
-
-- Jest
-- Supertest
-
-### Versionamento
-
-- Git
-- GitHub
-
-### Deploy
-
-- Render
-
----
-
-## 7. 📁 Estrutura do projeto
+## 8. Estrutura do repositório
 
 ```text
 HajimeTech/
-├── README.md               ← este arquivo
-├── REQUISITOS.md           ← requisitos funcionais, não funcionais, regras de negócio e permissões
-├── frontend/               ← aplicação React + Vite + TypeScript
-│   ├── index.html
-│   ├── package.json
-│   ├── scripts/
-│   │   └── gerar-seed.ts   ← gera database/seed.sql a partir dos mocks
+├── README.md                 Visão geral do projeto (este arquivo)
+├── REQUISITOS.md             Requisitos funcionais, não funcionais, regras de negócio e permissões
+├── docs/
+│   ├── arquitetura.md        Desenhos da arquitetura e decisões de projeto
+│   └── issues/               Dicionário de issues: índice e uma ficha por issue
+├── .github/
+│   ├── workflows/ci.yml      Verificação automática a cada pull request
+│   └── ISSUE_TEMPLATE/       Modelos de issue (tarefa e bug)
+├── frontend/
+│   ├── scripts/gerar-seed.ts Gera database/seed.sql a partir dos dados de demonstração
 │   └── src/
-│       ├── main.tsx, AppRoutes.tsx   ← entrada e rotas (com proteção por perfil)
-│       ├── components/     ← layout, gráficos, logo, perfil do aluno e componentes de UI
-│       ├── contexts/       ← sessão (AuthContext), escola selecionada (EscolaContext), avisos
-│       ├── hooks/          ← useCarregar (carregamento assíncrono)
-│       ├── mocks/          ← dados de exemplo (determinísticos)
-│       ├── pages/          ← uma página por tela
-│       ├── services/       ← camada que simula a API ← ÚNICO ponto a trocar pelo backend
-│       ├── styles/         ← tokens de design e estilos globais
-│       ├── types/          ← tipos de domínio (espelham o banco)
-│       └── utils/          ← formatação e matriz de permissões
-├── database/
-│   ├── docker-compose.yml  ← PostgreSQL de desenvolvimento (sobe vazio)
-│   ├── seed.sql            ← dados de exemplo (gerado, coerente com os mocks)
-│   └── README.md           ← como criar o banco + DER (Mermaid)
-└── backend/
-    ├── README.md           ← contratos de API esperados + espaço para a equipe
-    ├── prisma/
-    │   ├── schema.prisma   ← modelo de dados oficial (fonte da verdade)
-    │   └── migrations/     ← migrações SQL versionadas (tabelas, constraints, gatilhos)
-    └── src/ ...            ← login (auth) + protótipo Express anterior (referência, não alinhado ao novo schema)
+│       ├── pages/            Uma página por tela
+│       ├── components/       Layout, gráficos, perfil do aluno e componentes de interface
+│       ├── contexts/         Sessão, escola selecionada e avisos
+│       ├── services/         Chamadas à API (único acesso das telas aos dados)
+│       ├── types/            Tipos de domínio
+│       ├── utils/            Formatação e matriz de permissões
+│       ├── styles/           Tokens de design e estilos globais
+│       └── mocks/            Dados de demonstração (fonte do seed.sql)
+├── backend/
+│   ├── prisma/               Modelo de dados e migrations
+│   ├── src/
+│   │   ├── routes/           Rotas por domínio
+│   │   ├── middleware/       Autenticação, perfis e escopo por escola
+│   │   └── lib/              Erros, validações e conversão de formato
+│   ├── tests/                Testes unitários e de integração
+│   └── client.http           Exemplos de requisições para o VS Code
+└── database/
+    ├── docker-compose.yml    PostgreSQL de desenvolvimento com migrations e seed
+    └── seed.sql              Dados de demonstração
 ```
 
-**Telas:** Login (e-mail e senha) · Escolas · Painel · Alunos · Perfil do aluno · Turmas · Frequência · Graduações · Acompanhamento técnico · Currículo · Avaliações · Premiações · Relatórios · Minha evolução (aluno).
+## 9. Como executar
 
----
+### Requisitos
 
-## 8. ▶️ Como rodar o front-end
+* [Node.js](https://nodejs.org/) 20 ou superior e npm
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/), ou um PostgreSQL 14 ou superior instalado
+* Navegador atualizado
 
-### Pré-requisitos
+O front busca todos os dados na API, então os três serviços precisam estar em execução, nesta ordem.
 
-- [Node.js](https://nodejs.org/) **20 ou superior** (testado com o Node 24) e o npm
-- Um navegador atualizado (Chrome, Edge, Firefox ou Safari)
+### 1. Banco de dados
 
-### Instalação
+```bash
+cd database
+docker compose up -d
+```
+
+O PostgreSQL sobe na porta 5433 já com as tabelas e os dados de demonstração.
+
+### 2. API
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+A API fica disponível em `http://localhost:3000/api`.
+
+### 3. Frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-### Iniciar
-
-```bash
+cp .env.example .env
 npm run dev
 ```
 
-Abra **http://localhost:5173** no navegador.
+Acesse `http://localhost:5173`. No PowerShell, use `copy` no lugar de `cp`.
 
-### Como usar a demonstração
+### Usuários de demonstração
 
-1. Na tela de entrada, escolha o perfil **Administrador**, **Professor** ou **Aluno** e um usuário de demonstração.
-2. O administrador cai na tela **Escolas**: clique em "Acessar escola". O professor e o aluno já entram na própria escola.
-3. As alterações feitas (cadastros, chamadas, graduações...) ficam salvas enquanto a aba estiver aberta. Para voltar aos dados originais, use **Restaurar**, no rodapé do menu.
+Todos entram com a senha `hajime123`.
 
-| Usuário de demonstração | Perfil | Escola |
+| Usuário | Email | Perfil | Escola |
+|---|---|---|---|
+| Coordenação HajimeTech | `admin@hajimetech.local` | Administrador | Todas |
+| Sensei Ana Paula Ribeiro | `ana@hajime.local` | Professor | Academia Hajime |
+| Prof. Rafael Souza | `rafael@hajime.local` | Professor | Academia Hajime |
+| Sensei Marcos Tanaka | `marcos@kizuna.local` | Professor | Dojo Kizuna |
+| Lucas Oliveira | `lucas@aluno.local` | Aluno | Academia Hajime |
+| Yuki Tanaka | `yuki@aluno.local` | Aluno | Dojo Kizuna |
+
+O administrador começa na tela Escolas e escolhe qual acessar. Professores e alunos entram direto na própria escola. Para voltar aos dados originais, recrie o banco com `docker compose down -v` seguido de `docker compose up -d`.
+
+### Comandos úteis
+
+| Onde | Comando | O que faz |
 |---|---|---|
-| Coordenação HajimeTech | Administrador | Todas |
-| Sensei Ana Paula Ribeiro | Professor | Academia Hajime |
-| Prof. Rafael Souza | Professor | Academia Hajime |
-| Sensei Marcos Tanaka | Professor | Dojo Kizuna |
-| Lucas Oliveira | Aluno | Academia Hajime |
-| Yuki Tanaka | Aluno | Dojo Kizuna |
+| `frontend` | `npm run build` | Verifica os tipos e gera a versão de produção |
+| `frontend` | `npm run gerar-seed` | Regera `database/seed.sql` a partir dos dados de demonstração |
+| `backend` | `npm test` | Roda os testes |
+| `backend` | `npm run db:migrate` | Cria e aplica uma migration a partir do `schema.prisma` |
+| `backend` | `npm run db:deploy` | Aplica as migrations pendentes |
+| `backend` | `npm run db:seed` | Carrega os dados de demonstração em um banco vazio |
 
-### Outros comandos
+## 10. Banco de dados
 
-| Comando | O que faz |
+* O modelo oficial é `backend/prisma/schema.prisma`, versionado em `backend/prisma/migrations`.
+* Toda tabela de dados tem `escola_id`, e chaves estrangeiras compostas impedem que um registro aponte para dados de outra escola.
+* Exclusões são lógicas (coluna `ativo`): alunos, turmas, técnicas, categorias, escolas e premiações não são apagados.
+* Um gatilho no banco impede currículo nas faixas sem conteúdo definido.
+* O `database/seed.sql` é gerado por script e usa datas relativas ao dia em que é carregado, para o painel sempre mostrar dados recentes. Não deve ser editado à mão.
+
+Diagrama entidade e relacionamento, dicionário de dados e instruções detalhadas: [`database/README.md`](database/README.md).
+
+## 11. API
+
+API REST em Node.js com Express. As consultas são feitas em SQL com o driver `pg`, e o Prisma cuida das migrations.
+
+Garantias aplicadas pelo servidor:
+
+* **Autenticação:** login com email e senha e token JWT. Toda rota, exceto o login, exige o token.
+* **Isolamento por escola:** professor e aluno acessam apenas a própria escola. Registros de outra escola respondem como inexistentes.
+* **Permissões:** somente o administrador gerencia escolas; administrador e professor editam os cadastros e o currículo; o aluno lê apenas os próprios dados.
+* **Regras de negócio:** desativação lógica; graduação sempre para uma faixa superior, guardando a anterior; Marrom e Preta sem currículo; chamada sem registros duplicados; notas de 1 a 5 por critério.
+* **Formato padronizado:** respostas em camelCase e erros sempre no formato `{ "erro": "mensagem" }`.
+
+Contrato completo das rotas, exemplos e regras: [`backend/README.md`](backend/README.md). Exemplos prontos para o VS Code: [`backend/client.http`](backend/client.http).
+
+## 12. Testes e integração contínua
+
+| Tipo | O que cobre | Como rodar |
+|---|---|---|
+| Unitários | Login, sessão, token inválido ou expirado, permissões por perfil e acesso a outra escola | `npm test` em `backend` |
+| Integração | Fluxo real com o banco: isolamento entre escolas, perfil aluno, exclusão lógica, currículo, graduações, frequência e painel | `npm test` com a variável `TEST_DATABASE_URL` apontando para o banco do Docker |
+| Frontend | Verificação de tipos e build de produção | `npm run build` em `frontend` |
+
+O workflow `.github/workflows/ci.yml` executa tudo isso a cada pull request, com um PostgreSQL próprio. As tarefas pendentes incluem, nos critérios de aceite, os testes da sua parte.
+
+## 13. Identidade visual e acessibilidade
+
+| Elemento | Definição |
 |---|---|
-| `npm run build` | Verifica os tipos (TypeScript) e gera a versão de produção em `frontend/dist` |
-| `npm run preview` | Serve localmente a versão de produção gerada |
-| `npm run typecheck` | Só verifica os tipos |
-| `npm run gerar-seed` | Regera `database/seed.sql` a partir dos mocks |
+| Cores | Vermelho `#C8102E`, azul `#1D4ED8` e `#13306E` e branco, com tons de apoio. Pares de texto e fundo com contraste WCAG AA |
+| Faixas | Cores reais do judô, sempre acompanhadas do nome escrito |
+| Títulos | Dela Gothic One |
+| Textos | Montserrat |
+| Logomarca | Yuji Syuku |
+| Símbolo | Faixa de judô em movimento ascendente, passando por degraus (as graduações) até um círculo vermelho (a meta) |
 
----
+A interface é responsiva (no celular, o menu vira uma gaveta) e foi pensada para pessoas sem conhecimento técnico: cada gráfico tem um título simples e uma frase explicando o que mostra. Campos com rótulo, foco visível, mensagens de erro ligadas aos campos e botões com nome acessível fazem parte dos componentes base. Os tokens de design ficam em `frontend/src/styles/tokens.css`.
 
-## 9. 🗄️ Banco de dados
+## 14. Estado do projeto e tarefas
 
-O modelo completo, com DER, dicionário de dados e convenções, está em [`database/README.md`](database/README.md).
+As tarefas ficam nas [issues do GitHub](https://github.com/manroque/HajimeTech/issues), com uma cópia pesquisável em [`docs/issues`](docs/issues/README.md).
 
-O schema é versionado com **migrações do Prisma** (`backend/prisma`). Com Docker, o banco já sobe **com as tabelas e os dados de exemplo** na primeira vez (o serviço `migrate` aplica as migrações e carrega o seed):
+**Backend**
 
-```bash
-cd database && docker compose up -d
-```
-
-Conexão: `postgresql://hajimetech:hajimetech@localhost:5433/hajimetech` (porta 5433, para não conflitar com um PostgreSQL instalado). Com um PostgreSQL instalado, aponte `DATABASE_URL` em `backend/.env` para ele e rode, em `backend/`, `npm install && npm run db:deploy && npm run db:seed`.
-
-Para alterar o modelo: edite `backend/prisma/schema.prisma` e rode `npm run db:migrate -- --name <descricao>` (detalhes em [`database/README.md`](database/README.md)).
-
-- **PostgreSQL 14+**.
-- `seed.sql` é **gerado** pelos mocks do front (`npm run gerar-seed`), então banco e interface têm exatamente os mesmos dados. Não edite o seed à mão.
-- As datas de exemplo são relativas (`CURRENT_DATE - n`), para que o painel sempre mostre dados recentes.
-- As migrações e o `seed.sql` foram validados num PostgreSQL real, e o seed não cria nenhuma técnica para as faixas Marrom e Preta.
-
----
-
-## 10. 🔌 Backend
-
-> **Seção a ser preenchida pela equipe de backend.**
-
-### O que já foi feito (ponto de partida)
-
-- **Contratos de API:** cada função em [`frontend/src/services`](frontend/src/services) tem um comentário `INTEGRAÇÃO BACKEND: MÉTODO /api/...` com o endpoint esperado. A lista completa de endpoints, com corpos de exemplo, está em [`backend/README.md`](backend/README.md).
-- **Modelo de dados:** [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma) e suas migrações são a referência oficial.
-- **Tipos:** [`frontend/src/types/index.ts`](frontend/src/types/index.ts) define o formato dos objetos que a API deve devolver.
-- **Cliente HTTP:** [`frontend/src/services/http.ts`](frontend/src/services/http.ts) já está pronto e usa a variável `VITE_API_URL`.
-- **Protótipo anterior:** `backend/src` tem uma API Express da versão anterior, mantida como referência. Ela foi escrita para um schema antigo (já removido; o banco agora é controlado pelas migrações do Prisma) e precisa ser alinhada ao novo modelo.
-
-### Onde estão os mocks e o que substituir
-
-| Arquivo | O que fazer na integração |
+| Issue | Tarefa |
 |---|---|
-| `frontend/src/mocks/*` | Dados de exemplo. Continuam úteis para gerar o seed |
-| `frontend/src/services/mockDb.ts` | "Banco" em memória. **Remover** depois da integração |
-| `frontend/src/services/*Service.ts` | Trocar o corpo de cada função (`simular(...)`) por `http.get/post/...`, **mantendo a mesma assinatura**. Nenhuma tela precisa mudar |
-| `frontend/src/contexts/AuthContext.tsx` | ✅ Já usa login real (JWT). Remover `definirUsuarioSessao` quando o mock sair |
+| [#15](https://github.com/manroque/HajimeTech/issues/15) | Cadastro, edição e desativação de escolas |
+| [#16](https://github.com/manroque/HajimeTech/issues/16) | Edição e desativação de turmas |
+| [#17](https://github.com/manroque/HajimeTech/issues/17) | Reordenação de categorias e técnicas do currículo |
+| [#18](https://github.com/manroque/HajimeTech/issues/18) | Registro de avaliação de desempenho |
+| [#19](https://github.com/manroque/HajimeTech/issues/19) | Tipos de premiação e concessão aos alunos |
+| [#13](https://github.com/manroque/HajimeTech/issues/13) | Rotas de usuários, troca de senha e critérios de avaliação |
 
-### Como rodar o backend
+**Frontend**
 
-```bash
-cd database && docker compose up -d          # PostgreSQL com migrações + seed (usuários com senha "hajime123")
-cd ../backend && npm install && cp .env.example .env
-npm run dev                                  # http://localhost:3000/api
-```
+| Issue | Tarefa |
+|---|---|
+| [#10](https://github.com/manroque/HajimeTech/issues/10) | Navegação por teclado nas abas e seletores de opção |
+| [#12](https://github.com/manroque/HajimeTech/issues/12) | Definir um único gerenciador de pacotes (npm ou pnpm) |
+| [#14](https://github.com/manroque/HajimeTech/issues/14) | Testes automatizados do front |
+| [#20](https://github.com/manroque/HajimeTech/issues/20) | Tela de usuários |
+| [#21](https://github.com/manroque/HajimeTech/issues/21) | Edição dos critérios de avaliação |
+| [#22](https://github.com/manroque/HajimeTech/issues/22) | Troca de senha |
 
-Depois, no front: `cp .env.example .env` e `npm run dev`. Detalhes (variáveis, testes) em [`backend/README.md`](backend/README.md#8-como-rodar-o-backend).
+**Também a definir pela academia:** o conteúdo do currículo das faixas Marrom e Preta e a revisão do currículo de exemplo das demais faixas.
 
----
+## 15. Como contribuir
 
-## 11. 🚀 Próximos passos
+1. Escolha uma issue aberta e atribua a você.
+2. Crie uma branch a partir da `main` com um nome descritivo, por exemplo `feat/cadastro-escolas`.
+3. Siga os critérios de aceite da issue, incluindo os testes.
+4. Abra um pull request citando a issue (`Closes #15`). O CI precisa passar antes da revisão.
+5. Atualize a ficha da issue em `docs/issues` quando ela for concluída.
 
-1. **Backend:** implementar os endpoints de [`backend/README.md`](backend/README.md) sobre o modelo do Prisma (`backend/prisma`), com autenticação JWT e permissões validadas no servidor.
-2. **Integração:** substituir a camada `services` por chamadas reais e remover o `mockDb.ts`.
-3. **Currículo das faixas Marrom e Preta:** quando a academia definir o conteúdo, marcar `conteudo_definido = true` na tabela `faixas` e cadastrar as técnicas pela tela Currículo.
-4. **Revisar o currículo de exemplo** (Branca a Roxa) com os professores de cada escola.
-5. **Gestão de usuários:** criar telas para cadastrar professores e acessos de alunos, e para editar os critérios de avaliação.
-6. **Limpeza:** remover os arquivos da versão anterior do front (`frontend/src/**/*.jsx`, `frontend/src/services/api.js`, `frontend/src/styles/index.css`), que não são mais usados.
-7. **Testes automatizados** para os services e as regras de negócio (Vitest no front; Jest e Supertest no backend).
-8. **Deploy** do front e do backend no Render.
+Para registrar uma nova tarefa, use os modelos "Tarefa" ou "Bug" ao abrir a issue.
+
+## 16. Documentação complementar
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/arquitetura.md`](docs/arquitetura.md) | Desenhos da arquitetura e decisões de projeto |
+| [`REQUISITOS.md`](REQUISITOS.md) | Requisitos funcionais e não funcionais, regras de negócio e permissões |
+| [`backend/README.md`](backend/README.md) | Contrato da API, regras do servidor, como rodar e testar |
+| [`database/README.md`](database/README.md) | Modelo de dados, diagrama e instruções do banco |
+| [`docs/issues/README.md`](docs/issues/README.md) | Índice de todas as issues |

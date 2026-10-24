@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Dicionário de issues
+    url: https://github.com/manroque/HajimeTech/tree/main/docs/issues
+    about: Consulte as issues já registradas, organizadas por área, antes de abrir uma nova.
