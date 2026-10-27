@@ -4,7 +4,7 @@ O **modelo de dados oficial** do HajimeTech (PostgreSQL) é versionado com **mig
 
 | Arquivo | Conteúdo | Pode editar? |
 |---|---|---|
-| `backend/prisma/schema.prisma` | Modelo: enums, tabelas, chaves, relações e índices. | Sim. É a fonte da verdade do modelo. Se mudar, gere uma migração e atualize também `frontend/src/types/index.ts`. |
+| `backend/prisma/schema.prisma` | Modelo: enums, tabelas, chaves, relações e índices. | Sim. É a fonte da verdade do modelo. Se mudar, gere uma migração e atualize também `frontend/src/types/index.js`. |
 | `backend/prisma/migrations/` | SQL de cada versão do banco, aplicado em ordem. A `0_init` também tem a parte escrita à mão (CHECKs, índice por expressão, gatilhos, `pgcrypto`). | Só migrações novas. **Não altere** uma migração já aplicada. |
 | `database/seed.sql` | Dados de exemplo (2 escolas, 35 alunos, currículo, frequência de 1 ano etc.). | **Não.** É gerado automaticamente. |
 
@@ -23,11 +23,11 @@ npm run db:migrate -- --name descricao-da-mudanca   # gera prisma/migrations/<da
 
 ### Como o `seed.sql` é gerado
 
-O `seed.sql` é produzido a partir dos mesmos mocks que o front-end usa (`frontend/src/mocks`), garantindo que banco e protótipo tenham **os mesmos IDs, nomes e quantidades**:
+O `seed.sql` é produzido a partir dos dados de demonstração em `frontend/src/mocks`, com **IDs fixos**, para que os testes e a documentação possam citar registros conhecidos:
 
 ```bash
 cd frontend
-npm run gerar-seed      # executa scripts/gerar-seed.ts → ../database/seed.sql
+npm run gerar-seed      # executa scripts/gerar-seed.js → ../database/seed.sql
 ```
 
 - Para alterar os dados de exemplo, edite os arquivos em `frontend/src/mocks` e rode o comando novamente. Alterações feitas à mão no `seed.sql` serão perdidas.
@@ -409,7 +409,7 @@ Todos os nomes, telefones e endereços são **fictícios**.
 
 ### Usuários de demonstração
 
-No protótipo o login é **simulado** (escolhe-se o usuário numa lista). No backend real o acesso será por e-mail e senha.
+O acesso é por email e senha. Todos os usuários de demonstração entram com a senha `hajime123`.
 
 | Nome | E-mail | Perfil | Escola |
 |---|---|---|---|

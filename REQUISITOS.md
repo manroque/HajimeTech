@@ -4,7 +4,7 @@ Sistema web de gestão para academias de judô, com suporte a **várias escolas*
 
 Documentos relacionados: [`database/README.md`](database/README.md) (modelo de dados) e [`backend/README.md`](backend/README.md) (contrato da API).
 
-> **Situação da entrega:** o login é real (API + PostgreSQL); o restante do front-end funciona com dados simulados (mocks). Onde um requisito depende do backend, isso está indicado como *(backend)*.
+> **Situação da entrega:** o front consome a API (Node.js, Express e PostgreSQL), que aplica as permissões e as regras de negócio no servidor. Requisitos marcados com *(backend)* são garantidos pela API. Algumas gravações ainda são tarefas do grupo; a lista está em `docs/issues/README.md`.
 
 ---
 
@@ -125,7 +125,7 @@ Documentos relacionados: [`database/README.md`](database/README.md) (modelo de d
 | RNF05 | Usabilidade para leigos | Linguagem simples e sem jargão técnico; termos do judô acompanhados de explicação; confirmação antes de ações que desativam/removem; mensagens claras de sucesso e erro; estados vazios que orientam o próximo passo. |
 | RNF06 | Identidade visual | Paleta **vermelho, azul e branco**. Fontes (Google Fonts): **Dela Gothic One** para títulos (a fonte "Gothic One" solicitada não existe no Google Fonts; Dela Gothic One é a mais próxima), **Montserrat** para textos e **Yuji Syuku** para a logomarca. |
 | RNF07 | Localização | Interface em português do Brasil; datas no formato `dd/mm/aaaa`; semana começando na segunda-feira nos gráficos semanais. |
-| RNF08 | Manutenibilidade | Código em **TypeScript**; tipos de domínio centralizados (`frontend/src/types`); **camada de services** como único acesso a dados, permitindo trocar os mocks pela API sem alterar telas; dados de exemplo e `seed.sql` gerados da mesma fonte. |
+| RNF08 | Manutenibilidade | Código em **JavaScript**, como exigido pela disciplina; formato das entidades documentado em JSDoc (`frontend/src/types`); **camada de services** como único acesso a dados, que concentra as chamadas à API; dados de demonstração e `seed.sql` gerados da mesma fonte. |
 | RNF09 | Segurança e isolamento | Dados **isolados por escola** (filtro por `escola_id` e chaves compostas no banco); permissões verificadas **no servidor**; senhas com hash (bcrypt/argon2); token com expiração; HTTPS em produção; validação de toda entrada *(backend)*. |
 | RNF10 | Privacidade | Tratar dados pessoais (inclusive de menores) conforme a **LGPD**: coletar apenas o necessário, restringir acesso por perfil e não expor dados em URLs ou logs. |
 | RNF11 | Integridade | Nenhum dado histórico é apagado (desativação lógica); operações compostas (graduação, avaliação, chamada) em transação *(backend)*. |
@@ -190,4 +190,4 @@ Observações:
 - **Professor** tem todas essas permissões **apenas na própria escola**; tentar acessar outra escola resulta em "sem permissão".
 - **Aluno** nunca cria, edita ou desativa nada.
 - Critérios de avaliação são exibidos, mas ainda não há tela nem endpoint para editá-los (são definidos nos dados da escola).
-- No protótipo, as permissões são simuladas no front-end; no sistema final, o **servidor** deve validá-las em toda requisição (ver `backend/README.md`, seção 4).
+- O front esconde o que o perfil não pode usar, mas quem garante as permissões é o **servidor**, que as valida em toda requisição (ver `backend/README.md`, seção 4).

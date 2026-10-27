@@ -1,413 +1,236 @@
 import { Router } from 'express';
 
-import { pool } from '../db/index.js';
-import { canWrite } from '../middleware/tenant.js';
-
-const router = Router();
-
-/*
- * GET /api/curriculo
- *
- * Lista o currículo de uma determinada faixa.
- *
- * Exemplo:
- * /api/curriculo?faixa=Azul
- */
-router.get('/', async (req, res, next) => {
-  try {
-    const faixa = req.query.faixa || 'Azul';
-
-    const { rows: categorias } = await pool.query(
-      `
-        SELECT *
-        FROM curriculo_categorias
-        WHERE academia_id = $1
-          AND faixa = $2
-        ORDER BY ordem, nome
-      `,
-      [
-        req.academiaId,
-        faixa
-      ]
-    );
-
-    /*
-     * Busca as técnicas de cada categoria.
-     */
-    for (const categoria of categorias) {
-      const { rows: itens } = await pool.query(
-        `
-          SELECT *
-          FROM curriculo_itens
-          WHERE categoria_id = $1
-            AND ativo = true
-          ORDER BY ordem, nome
-        `,
-        [categoria.id]
-      );
-
-      categoria.itens = itens;
-    }
-
-    res.json(categorias);
-  } catch (err) {
-    next(err);
-  }
-});
+import { pool, transacao } from '../db/index.js';
+import { exigirPerfil } from '../middleware/auth.js';
+import {
+  booleano,
+  ehUuid,
+  exigirId,
+  flagQuery,
+  naoEncontrado,
+  regraViolada,
+  requisicaoInvalida,
+  rota,
+  textoObrigatorio,
+  textoOpcional
+} from '../lib/http.js';
+import { paraCategoria, paraTecnica } from '../lib/mapeadores.js';
 
 /*
- * POST /api/curriculo/categorias
+ * Currículo por faixa: categorias e técnicas.
+ * Montado em /api/escolas/:escolaId/curriculo
  *
- * Cria uma nova categoria no currículo.
- *
- * Apenas administradores e professores podem alterar
- * o currículo.
+ * Regras:
+ *  Somente administradores e professores editam.
+ *  Técnicas e categorias nunca são apagadas, apenas desativadas.
+ *  Marrom e Preta não têm conteúdo definido: criar itens nelas responde 422.
  */
-router.post('/categorias', canWrite, async (req, res, next) => {
-  try {
-    const {
-      faixa,
-      kyu_dan,
-      nome,
-      descricao
-    } = req.body;
+const router = Router({ mergeParams: true });
+const editores = exigirPerfil('administrador', 'professor');
 
-    if (!faixa?.trim() || !nome?.trim()) {
-      return res.status(400).json({
-        error: 'Faixa e nome são obrigatórios'
-      });
-    }
+async function obterFaixa(db, faixaId) {
+  const { rows } = await db.query('SELECT * FROM faixas WHERE id = $1', [faixaId ?? null]);
+  if (!rows[0]) throw requisicaoInvalida('Faixa inválida.');
+  return rows[0];
+}
 
-    const { rows } = await pool.query(
-      `
-        INSERT INTO curriculo_categorias (
-          academia_id,
-          faixa,
-          kyu_dan,
-          nome,
-          descricao,
-          ordem
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          $4,
-          $5,
-          COALESCE(
-            (
-              SELECT MAX(ordem) + 1
-              FROM curriculo_categorias
-              WHERE academia_id = $1
-                AND faixa = $2
-            ),
-            0
-          )
-        )
-        RETURNING *
-      `,
-      [
-        req.academiaId,
-        faixa.trim(),
-        kyu_dan?.trim() || null,
-        nome.trim(),
-        descricao?.trim() || null
-      ]
-    );
-
-    res.status(201).json({
-      ...rows[0],
-      itens: []
-    });
-  } catch (err) {
-    next(err);
+function exigirConteudoDefinido(faixa) {
+  if (!faixa.conteudo_definido) {
+    throw regraViolada(`O conteúdo da faixa ${faixa.nome} ainda não foi definido pela academia.`);
   }
-});
+}
+
+async function obterCategoriaAtiva(db, escolaId, id) {
+  const { rows } = await db.query(
+    'SELECT * FROM categorias_curriculo WHERE id = $1 AND escola_id = $2 AND ativo',
+    [ehUuid(id) ? id : null, escolaId]
+  );
+  if (!rows[0]) throw naoEncontrado('Categoria');
+  return rows[0];
+}
+
+/* Renumera as categorias ativas de uma faixa (1, 2, 3...) mantendo a ordem atual. */
+async function renumerarCategorias(client, escolaId, faixaId) {
+  await client.query(
+    `UPDATE categorias_curriculo c
+        SET ordem = n.nova
+       FROM (SELECT id, row_number() OVER (ORDER BY ordem, nome) AS nova
+               FROM categorias_curriculo
+              WHERE escola_id = $1 AND faixa_id = $2 AND ativo) n
+      WHERE c.id = n.id AND c.ordem <> n.nova`,
+    [escolaId, faixaId]
+  );
+}
 
 /*
- * PUT /api/curriculo/categorias/:id
- *
- * Edita uma categoria existente.
+ * GET /api/escolas/:escolaId/curriculo?faixaId=azul&incluirInativas=false
+ * Categorias ativas da faixa, cada uma com suas técnicas.
+ * Técnicas desativadas só aparecem para quem pode editar e pediu `incluirInativas`.
  */
-router.put('/categorias/:id', canWrite, async (req, res, next) => {
-  try {
-    const {
-      nome,
-      descricao,
-      ordem
-    } = req.body;
+router.get('/', rota(async (req, res) => {
+  const faixa = await obterFaixa(pool, req.query.faixaId);
+  const incluirInativas = flagQuery(req.query.incluirInativas) && req.usuario.perfil !== 'aluno';
 
-    const { rows } = await pool.query(
-      `
-        UPDATE curriculo_categorias
-        SET
-          nome = COALESCE($1, nome),
-          descricao = COALESCE($2, descricao),
-          ordem = COALESCE($3, ordem),
-          atualizado_em = now()
-        WHERE id = $4
-          AND academia_id = $5
-        RETURNING *
-      `,
-      [
-        nome?.trim() || null,
-        descricao?.trim() || null,
-        ordem ?? null,
-        req.params.id,
-        req.academiaId
-      ]
-    );
+  const { rows: categorias } = await pool.query(
+    `SELECT * FROM categorias_curriculo
+      WHERE escola_id = $1 AND faixa_id = $2 AND ativo
+      ORDER BY ordem, nome`,
+    [req.escolaId, faixa.id]
+  );
 
-    if (!rows[0]) {
-      return res.status(404).json({
-        error: 'Categoria não encontrada'
-      });
-    }
+  const { rows: tecnicas } = await pool.query(
+    `SELECT * FROM tecnicas
+      WHERE categoria_id = ANY($1) AND ($2 OR ativo)
+      ORDER BY ativo DESC, ordem, nome`,
+    [categorias.map((c) => c.id), incluirInativas]
+  );
 
-    res.json(rows[0]);
-  } catch (err) {
-    next(err);
-  }
-});
+  res.json(categorias.map((c) => ({
+    ...paraCategoria(c),
+    tecnicas: tecnicas.filter((t) => t.categoria_id === c.id).map(paraTecnica)
+  })));
+}));
+
+/* ------------------------------------------------------------------ Categorias */
+
+/* POST .../curriculo/categorias { faixaId, nome, descricao } — entra no fim da faixa */
+router.post('/categorias', editores, rota(async (req, res) => {
+  const faixa = await obterFaixa(pool, req.body?.faixaId);
+  exigirConteudoDefinido(faixa);
+  const nome = textoObrigatorio(req.body?.nome, 'Informe o nome da categoria.');
+
+  const { rows } = await pool.query(
+    `INSERT INTO categorias_curriculo (escola_id, faixa_id, nome, descricao, ordem)
+     VALUES ($1, $2, $3, $4,
+       (SELECT count(*) + 1 FROM categorias_curriculo WHERE escola_id = $1 AND faixa_id = $2 AND ativo))
+     RETURNING *`,
+    [req.escolaId, faixa.id, nome, textoOpcional(req.body?.descricao)]
+  );
+
+  res.status(201).json(paraCategoria(rows[0]));
+}));
 
 /*
- * DELETE /api/curriculo/categorias/:id
- *
- * Exclui uma categoria.
- *
- * Os itens relacionados também são excluídos pelo
- * ON DELETE CASCADE definido no banco de dados.
+ * PENDENTE (issue de reordenação do currículo):
+ *   PATCH .../curriculo/categorias/reordenar { ids }
+ *   PATCH .../curriculo/tecnicas/reordenar { categoriaId, ids }
+ * Regras na seção 6 do backend/README.md (regra 6).
  */
-router.delete(
-  '/categorias/:id',
-  canWrite,
-  async (req, res, next) => {
-    try {
-      const result = await pool.query(
-        `
-          DELETE FROM curriculo_categorias
-          WHERE id = $1
-            AND academia_id = $2
-        `,
-        [
-          req.params.id,
-          req.academiaId
-        ]
-      );
 
-      res.json({
-        ok: result.rowCount === 1
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+/* PUT .../curriculo/categorias/:id { nome, descricao } */
+router.put('/categorias/:id', editores, rota(async (req, res) => {
+  const id = exigirId(req.params.id, 'Categoria');
+  const nome = textoObrigatorio(req.body?.nome, 'Informe o nome da categoria.');
+
+  const { rows } = await pool.query(
+    `UPDATE categorias_curriculo SET nome = $1, descricao = $2
+      WHERE id = $3 AND escola_id = $4 AND ativo
+      RETURNING *`,
+    [nome, textoOpcional(req.body?.descricao), id, req.escolaId]
+  );
+
+  if (!rows[0]) throw naoEncontrado('Categoria');
+  res.json(paraCategoria(rows[0]));
+}));
 
 /*
- * POST /api/curriculo/itens
- *
- * Adiciona uma técnica a uma categoria.
+ * DELETE .../curriculo/categorias/:id
+ * Desativa a categoria e suas técnicas (o histórico dos alunos é mantido)
+ * e renumera as categorias restantes da faixa.
  */
-router.post('/itens', canWrite, async (req, res, next) => {
-  try {
-    const {
-      categoria_id,
-      nome
-    } = req.body;
+router.delete('/categorias/:id', editores, rota(async (req, res) => {
+  const id = exigirId(req.params.id, 'Categoria');
 
-    if (!categoria_id || !nome?.trim()) {
-      return res.status(400).json({
-        error: 'Categoria e nome são obrigatórios'
-      });
-    }
+  await transacao(async (client) => {
+    const categoria = await obterCategoriaAtiva(client, req.escolaId, id);
+    await client.query('UPDATE categorias_curriculo SET ativo = false WHERE id = $1', [id]);
+    await client.query('UPDATE tecnicas SET ativo = false WHERE categoria_id = $1 AND ativo', [id]);
+    await renumerarCategorias(client, req.escolaId, categoria.faixa_id);
+  });
 
-    /*
-     * Confirma que a categoria pertence à academia atual.
-     */
-    const categoria = await pool.query(
-      `
-        SELECT id
-        FROM curriculo_categorias
-        WHERE id = $1
-          AND academia_id = $2
-      `,
-      [
-        categoria_id,
-        req.academiaId
-      ]
-    );
+  res.status(204).end();
+}));
 
-    if (!categoria.rows[0]) {
-      return res.status(404).json({
-        error: 'Categoria não encontrada'
-      });
-    }
+/* ------------------------------------------------------------------ Técnicas */
 
-    const { rows } = await pool.query(
-      `
-        INSERT INTO curriculo_itens (
-          categoria_id,
-          nome,
-          ordem
-        )
-        SELECT
-          $1,
-          $2,
-          COALESCE(MAX(ordem) + 1, 0)
-        FROM curriculo_itens
-        WHERE categoria_id = $1
-          AND ativo = true
-        RETURNING *
-      `,
-      [
-        categoria_id,
-        nome.trim()
-      ]
-    );
+/* POST .../curriculo/tecnicas { categoriaId, nome, descricao } — entra no fim da categoria */
+router.post('/tecnicas', editores, rota(async (req, res) => {
+  const categoria = await obterCategoriaAtiva(pool, req.escolaId, req.body?.categoriaId);
+  exigirConteudoDefinido(await obterFaixa(pool, categoria.faixa_id));
+  const nome = textoObrigatorio(req.body?.nome, 'Informe o nome da técnica.');
 
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    next(err);
-  }
-});
+  const { rows } = await pool.query(
+    `INSERT INTO tecnicas (escola_id, categoria_id, nome, descricao, ordem)
+     VALUES ($1, $2, $3, $4,
+       (SELECT count(*) + 1 FROM tecnicas WHERE categoria_id = $2 AND ativo))
+     RETURNING *`,
+    [req.escolaId, categoria.id, nome, textoOpcional(req.body?.descricao)]
+  );
+
+  res.status(201).json(paraTecnica(rows[0]));
+}));
+
+/* PUT .../curriculo/tecnicas/:id { nome, descricao } */
+router.put('/tecnicas/:id', editores, rota(async (req, res) => {
+  const id = exigirId(req.params.id, 'Técnica');
+  const nome = textoObrigatorio(req.body?.nome, 'Informe o nome da técnica.');
+
+  const { rows } = await pool.query(
+    `UPDATE tecnicas SET nome = $1, descricao = $2
+      WHERE id = $3 AND escola_id = $4
+      RETURNING *`,
+    [nome, textoOpcional(req.body?.descricao), id, req.escolaId]
+  );
+
+  if (!rows[0]) throw naoEncontrado('Técnica');
+  res.json(paraTecnica(rows[0]));
+}));
 
 /*
- * PUT /api/curriculo/itens/:id
- *
- * Edita uma técnica existente.
+ * PATCH .../curriculo/tecnicas/:id/ativo { ativo }
+ * Desativa ou reativa. Nunca apaga. Ao reativar, a técnica volta para o fim da categoria.
  */
-router.put('/itens/:id', canWrite, async (req, res, next) => {
-  try {
-    const {
-      nome,
-      ordem
-    } = req.body;
+router.patch('/tecnicas/:id/ativo', editores, rota(async (req, res) => {
+  const id = exigirId(req.params.id, 'Técnica');
+  const ativo = booleano(req.body?.ativo, 'ativo');
 
-    const { rows } = await pool.query(
-      `
-        UPDATE curriculo_itens AS i
-        SET
-          nome = COALESCE($1, i.nome),
-          ordem = COALESCE($2, i.ordem),
-          atualizado_em = now()
-        FROM curriculo_categorias AS c
-        WHERE i.id = $3
-          AND i.categoria_id = c.id
-          AND c.academia_id = $4
-        RETURNING i.*
-      `,
-      [
-        nome?.trim() || null,
-        ordem ?? null,
-        req.params.id,
-        req.academiaId
-      ]
-    );
+  const { rows } = await pool.query(
+    `UPDATE tecnicas t
+        SET ativo = $1,
+            ordem = CASE WHEN $1 AND NOT t.ativo
+                         THEN (SELECT count(*) + 1 FROM tecnicas x WHERE x.categoria_id = t.categoria_id AND x.ativo)
+                         ELSE t.ordem END
+      WHERE t.id = $2 AND t.escola_id = $3
+      RETURNING *`,
+    [ativo, id, req.escolaId]
+  );
 
-    if (!rows[0]) {
-      return res.status(404).json({
-        error: 'Item não encontrado'
-      });
-    }
-
-    res.json(rows[0]);
-  } catch (err) {
-    next(err);
-  }
-});
-
-/*
- * PATCH /api/curriculo/itens/reordenar
- *
- * Atualiza a ordem das técnicas dentro do currículo.
- */
-router.patch(
-  '/itens/reordenar',
-  canWrite,
-  async (req, res) => {
-    const { itens = [] } = req.body;
-
-    const connection = await pool.connect();
-
-    try {
-      await connection.query('BEGIN');
-
-      for (const item of itens) {
-        await connection.query(
-          `
-            UPDATE curriculo_itens AS i
-            SET ordem = $1
-            FROM curriculo_categorias AS c
-            WHERE i.id = $2
-              AND i.categoria_id = c.id
-              AND c.academia_id = $3
-          `,
-          [
-            item.ordem,
-            item.id,
-            req.academiaId
-          ]
-        );
-      }
-
-      await connection.query('COMMIT');
-
-      res.json({
-        ok: true
-      });
-    } catch (err) {
-      await connection.query('ROLLBACK');
-
-      console.error(
-        'Erro ao reordenar currículo:',
-        err
-      );
-
-      res.status(500).json({
-        error: 'Falha ao reordenar'
-      });
-    } finally {
-      connection.release();
-    }
-  }
-);
-
-/*
- * DELETE /api/curriculo/itens/:id
- *
- * Desativa uma técnica sem apagar o histórico
- * fisicamente do banco.
- */
-router.delete(
-  '/itens/:id',
-  canWrite,
-  async (req, res, next) => {
-    try {
-      const result = await pool.query(
-        `
-          UPDATE curriculo_itens AS i
-          SET
-            ativo = false,
-            atualizado_em = now()
-          FROM curriculo_categorias AS c
-          WHERE i.id = $1
-            AND i.categoria_id = c.id
-            AND c.academia_id = $2
-        `,
-        [
-          req.params.id,
-          req.academiaId
-        ]
-      );
-
-      res.json({
-        ok: result.rowCount === 1
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+  if (!rows[0]) throw naoEncontrado('Técnica');
+  res.json(paraTecnica(rows[0]));
+}));
 
 export default router;
+
+/* ------------------------------------------------------------------ Lista geral de técnicas */
+
+/*
+ * GET /api/escolas/:escolaId/tecnicas
+ * Técnicas ativas de categorias ativas, com a faixa e o nome da categoria.
+ */
+export const tecnicas = Router({ mergeParams: true });
+
+tecnicas.get('/', rota(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT t.*, c.faixa_id, c.nome AS categoria_nome
+       FROM tecnicas t
+       JOIN categorias_curriculo c ON c.id = t.categoria_id AND c.ativo
+      WHERE t.escola_id = $1 AND t.ativo
+      ORDER BY c.faixa_id, c.ordem, t.ordem`,
+    [req.escolaId]
+  );
+
+  res.json(rows.map((r) => {
+    const { faixa_id: faixaId, categoria_nome: categoriaNome, ...tecnica } = r;
+    return { ...paraTecnica(tecnica), faixaId, categoriaNome };
+  }));
+}));

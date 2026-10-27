@@ -1,11 +1,22 @@
-import React from 'react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
-import './styles/index.css';
+import { BrowserRouter } from 'react-router-dom';
+import { AppRoutes } from './AppRoutes';
+import { AuthProvider } from './contexts/AuthContext';
+import { EscolaProvider } from './contexts/EscolaContext';
+import { ToastProvider } from './contexts/ToastContext';
+import './styles/global.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
-  </StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <EscolaProvider>
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
+        </EscolaProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>,
 );

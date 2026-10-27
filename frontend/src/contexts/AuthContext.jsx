@@ -1,0 +1,102 @@
+/**
+ * Sessão do usuário: login com e-mail e senha na API (POST /api/auth/login).
+ *
+ * O token fica no sessionStorage (some ao fechar a aba) e é enviado pelo
+ * services/http.js em todas as requisições. As permissões são verificadas
+ * pela API; no front, `pode()` só esconde o que o perfil não pode usar.
+ */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { authService, ErroApi } from '../services';
+import { definirAoNaoAutorizado, definirToken } from '../services/http';
+import { pode } from '../utils/permissoes';
+
+const CHAVE = 'hajimetech:sessao';
+
+const AuthContext = createContext(null);
+
+function aplicarSessao(sessao) {
+  definirToken(sessao?.token ?? null);
+}
+
+function lerSessao() {
+  try {
+    const salvo = sessionStorage.getItem(CHAVE);
+    const sessao = salvo ? JSON.parse(salvo) : null;
+    const valida = sessao?.token && sessao.usuario ? sessao : null;
+    aplicarSessao(valida);
+    return valida;
+  } catch {
+    return null;
+  }
+}
+
+function gravarSessao(sessao) {
+  try {
+    if (sessao) sessionStorage.setItem(CHAVE, JSON.stringify(sessao));
+    else sessionStorage.removeItem(CHAVE);
+  } catch {
+    /* segue sem persistir */
+  }
+}
+
+export function AuthProvider({ children }) {
+  const [sessao, setSessao] = useState(lerSessao);
+
+  const sair = useCallback(() => {
+    aplicarSessao(null);
+    gravarSessao(null);
+    setSessao(null);
+  }, []);
+
+  const entrar = useCallback(async (email, senha) => {
+    const nova = await authService.entrar(email, senha);
+    aplicarSessao(nova);
+    gravarSessao(nova);
+    setSessao(nova);
+    return nova.usuario;
+  }, []);
+
+  // Token expirado/inválido em qualquer requisição → volta para o login.
+  useEffect(() => {
+    definirAoNaoAutorizado(sair);
+    return () => definirAoNaoAutorizado(null);
+  }, [sair]);
+
+  // Ao recarregar a página, confirma com a API que a sessão salva ainda vale.
+  const token = sessao?.token;
+  useEffect(() => {
+    if (!token) return;
+    let ativo = true;
+    authService
+      .sessaoAtual()
+      .then((usuario) => {
+        if (!ativo) return;
+        const atualizada = { token, usuario };
+        aplicarSessao(atualizada);
+        gravarSessao(atualizada);
+        setSessao(atualizada);
+      })
+      .catch((e) => {
+        if (ativo && e instanceof ErroApi && e.status === 401) sair();
+      });
+    return () => {
+      ativo = false;
+    };
+    // Só na montagem: depois do login o usuário já veio da API.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const usuario = sessao?.usuario ?? null;
+  const valor = useMemo(
+    () => ({ usuario, entrar, sair, pode: (acao) => pode(usuario?.perfil, acao) }),
+    [usuario, entrar, sair],
+  );
+
+  return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth deve ser usado dentro de <AuthProvider>.');
+  return ctx;
+}

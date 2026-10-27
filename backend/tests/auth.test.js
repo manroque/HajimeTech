@@ -9,7 +9,7 @@ const query = jest.fn();
 
 jest.unstable_mockModule('../src/db/index.js', () => ({
   pool: { query },
-  ACADEMIA_DEMO: '00000000-0000-0000-0000-000000000001'
+  transacao: jest.fn()
 }));
 
 const { default: app } = await import('../src/app.js');
@@ -163,71 +163,102 @@ describe('rotas protegidas', () => {
       { subject: ana.id, expiresIn: '1h' }
     );
 
+  const ESCOLA = ana.escola_id;
+  const OUTRA_ESCOLA = '00000001-0000-4000-8000-000000000002';
+  const rotaAlunos = `/api/escolas/${ESCOLA}/alunos`;
+
   test('sem token → 401', async () => {
-    const r = await request(app).get('/api/alunos');
+    const r = await request(app).get(rotaAlunos);
 
     expect(r.statusCode).toBe(401);
     expect(query).not.toHaveBeenCalled();
   });
 
   test('token inválido → 401', async () => {
-    const r = await request(app).get('/api/alunos').set('Authorization', 'Bearer abc.def.ghi');
+    const r = await request(app).get(rotaAlunos).set('Authorization', 'Bearer abc.def.ghi');
 
     expect(r.statusCode).toBe(401);
   });
 
   test('token expirado → 401', async () => {
-    const expirado = jwt.sign({ perfil: 'professor', escolaId: ana.escola_id }, 'segredo-de-teste', {
+    const expirado = jwt.sign({ perfil: 'professor', escolaId: ESCOLA }, 'segredo-de-teste', {
       subject: ana.id,
       expiresIn: -10
     });
 
-    const r = await request(app).get('/api/alunos').set('Authorization', `Bearer ${expirado}`);
+    const r = await request(app).get(rotaAlunos).set('Authorization', `Bearer ${expirado}`);
 
     expect(r.statusCode).toBe(401);
   });
 
   test('cabeçalhos legados sem token não dão acesso → 401', async () => {
     const r = await request(app)
-      .post('/api/turmas')
+      .post(`/api/escolas/${ESCOLA}/turmas`)
       .set('x-user-role', 'admin')
-      .set('x-academia-id', ana.escola_id)
-      .send({ nome: 'Kids', horario: '18h' });
+      .set('x-academia-id', ESCOLA)
+      .send({ nome: 'Kids' });
 
     expect(r.statusCode).toBe(401);
     expect(query).not.toHaveBeenCalled();
   });
 
   test('aluno não pode escrever → 403', async () => {
+    query.mockResolvedValueOnce({ rows: [{ id: ESCOLA }] }); // escola existe
+
     const r = await request(app)
-      .post('/api/alunos')
+      .post(rotaAlunos)
       .set('Authorization', `Bearer ${tokenDe('aluno', { alunoId: 'a1' })}`)
       .send({ nome: 'Fulano' });
 
     expect(r.statusCode).toBe(403);
     expect(r.body.erro).toBe('Você não tem permissão para realizar esta ação.');
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  test('professor não acessa outra escola, mesmo pela URL → 403', async () => {
+    const r = await request(app)
+      .get(`/api/escolas/${OUTRA_ESCOLA}/alunos`)
+      .set('Authorization', `Bearer ${tokenDe('professor')}`)
+      .set('x-academia-id', OUTRA_ESCOLA);
+
+    expect(r.statusCode).toBe(403);
     expect(query).not.toHaveBeenCalled();
   });
 
-  test('professor passa e a escola vem do token, não do cabeçalho', async () => {
-    query.mockResolvedValueOnce({ rows: [{ id: 't1' }] });
+  test('administrador acessa escola inexistente → 404', async () => {
+    query.mockResolvedValueOnce({ rows: [] });
 
     const r = await request(app)
-      .post('/api/turmas')
-      .set('Authorization', `Bearer ${tokenDe('professor')}`)
-      .set('x-academia-id', 'outra-escola')
-      .send({ nome: 'Kids', horario: '18h' });
-
-    expect(r.statusCode).toBe(201);
-    expect(query.mock.calls[0][1][0]).toBe(ana.escola_id);
-  });
-
-  test('administrador global sem escola → 400', async () => {
-    const r = await request(app)
-      .get('/api/alunos')
+      .get(`/api/escolas/${OUTRA_ESCOLA}/alunos`)
       .set('Authorization', `Bearer ${tokenDe('administrador', { escolaId: null })}`);
 
-    expect(r.statusCode).toBe(400);
+    expect(r.statusCode).toBe(404);
+    expect(r.body.erro).toBe('Escola não encontrado(a).');
+  });
+
+  test('id de escola em formato inválido → 404 sem consultar o banco', async () => {
+    const r = await request(app)
+      .get('/api/escolas/nao-e-uuid/alunos')
+      .set('Authorization', `Bearer ${tokenDe('administrador', { escolaId: null })}`);
+
+    expect(r.statusCode).toBe(404);
     expect(query).not.toHaveBeenCalled();
+  });
+
+  test('token de aluno sem aluno vinculado não lista dados de outros alunos → 403', async () => {
+    query.mockResolvedValueOnce({ rows: [{ id: ESCOLA }] }); // escola existe
+
+    const r = await request(app)
+      .get(`/api/escolas/${ESCOLA}/graduacoes`)
+      .set('Authorization', `Bearer ${tokenDe('aluno', { alunoId: null })}`);
+
+    expect(r.statusCode).toBe(403);
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  test('rotas antigas fora de /api/escolas não existem mais → 404', async () => {
+    const r = await request(app).get('/api/alunos').set('Authorization', `Bearer ${tokenDe('professor')}`);
+
+    expect(r.statusCode).toBe(404);
   });
 });
