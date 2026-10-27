@@ -14,6 +14,7 @@ import frequencias from './frequencias.js';
 import graduacoes from './graduacoes.js';
 import premiacoes, { premiacoesAluno } from './premiacoes.js';
 import turmas from './turmas.js';
+import usuarios from './usuarios.js';
 
 const router = Router();
 
@@ -85,6 +86,7 @@ daEscola.get('/professores', gestores, rota(async (req, res) => {
 // A chamada fica em /turmas/:turmaId/frequencias; precisa vir antes do router de turmas.
 daEscola.use('/turmas/:turmaId/frequencias', frequencias);
 daEscola.use('/turmas', turmas);
+daEscola.use('/usuarios', usuarios);
 daEscola.use('/alunos', alunos);
 daEscola.use('/graduacoes', graduacoes);
 daEscola.use('/curriculo', curriculo);

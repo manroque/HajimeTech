@@ -395,3 +395,111 @@ Authorization: Bearer {{tokenProfessor}}
 # 200 → { total_alunos, presencas_30_dias, faixas: [...], turmas: [...] }
 GET {{baseUrl}}/dashboard
 Authorization: Bearer {{tokenProfessor}}
+
+
+###############################################################################
+# Usuários, senha e critérios de avaliação (API atual, /escolas/:escolaId/...)
+###############################################################################
+
+@escolaId = 00000001-0000-4000-8000-000000000001
+@alunoIdSemAcesso = 00000005-0000-4000-8000-000000000002
+
+### Listar professores e acessos de alunos da escola (só ativos)
+# ?incluirInativas=true para incluir desativados. 200 → Usuario[]
+GET {{baseUrl}}/escolas/{{escolaId}}/usuarios
+Authorization: Bearer {{tokenProfessor}}
+
+### Criar professor (só administrador)
+# 201 → Usuario (sem senha). 409 se o email já existir.
+POST {{baseUrl}}/escolas/{{escolaId}}/usuarios
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nome": "Professor Teste",
+  "email": "professor.teste@hajime.local",
+  "perfil": "professor",
+  "senha": "hajime123"
+}
+
+### Criar acesso de aluno (administrador ou professor da escola)
+# perfil "aluno" exige alunoId de um aluno ativo da mesma escola.
+POST {{baseUrl}}/escolas/{{escolaId}}/usuarios
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Acesso da Sofia",
+  "email": "sofia@aluno.local",
+  "perfil": "aluno",
+  "alunoId": "{{alunoIdSemAcesso}}",
+  "senha": "hajime123"
+}
+
+### Desativar acesso (soft delete: ativo = false)
+# 200 → Usuario. { "ativo": true } reativa.
+PATCH {{baseUrl}}/escolas/{{escolaId}}/usuarios/00000002-0000-4000-8000-000000000002/ativo
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "ativo": false
+}
+
+### Trocar a própria senha
+# Confere senhaAtual. 400 se a atual estiver errada; 204 em caso de sucesso.
+POST {{baseUrl}}/auth/trocar-senha
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "hajime123",
+  "novaSenha": "novaSenha123"
+}
+
+### Listar critérios de avaliação ativos
+GET {{baseUrl}}/escolas/{{escolaId}}/criterios-avaliacao
+Authorization: Bearer {{tokenProfessor}}
+
+### Criar critério de avaliação (entra no fim da lista)
+POST {{baseUrl}}/escolas/{{escolaId}}/criterios-avaliacao
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Postura",
+  "descricao": "Postura e atitude no tatame."
+}
+
+### Editar critério de avaliação
+PUT {{baseUrl}}/escolas/{{escolaId}}/criterios-avaliacao/0000000b-0000-4000-8000-000000000001
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "nome": "Técnica",
+  "descricao": "Execução correta dos movimentos da faixa."
+}
+
+### Reordenar critérios de avaliação (lista com todos os ativos, na nova ordem)
+PATCH {{baseUrl}}/escolas/{{escolaId}}/criterios-avaliacao/reordenar
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "ids": [
+    "0000000b-0000-4000-8000-000000000004",
+    "0000000b-0000-4000-8000-000000000003",
+    "0000000b-0000-4000-8000-000000000002",
+    "0000000b-0000-4000-8000-000000000001"
+  ]
+}
+
+### Desativar critério (soft delete; { "ativo": true } reativa)
+PATCH {{baseUrl}}/escolas/{{escolaId}}/criterios-avaliacao/0000000b-0000-4000-8000-000000000001/ativo
+Authorization: Bearer {{tokenProfessor}}
+Content-Type: application/json
+
+{
+  "ativo": false
+}
