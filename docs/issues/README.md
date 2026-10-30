@@ -9,8 +9,9 @@ As issues oficiais ficam em https://github.com/manroque/HajimeTech/issues
 | Situação | Quantidade |
 |---|---:|
 | Tarefas abertas do backend | 6 |
-| Tarefas abertas do frontend | 6 |
+| Tarefas abertas do frontend | 5 |
 | Resolvidas no PR #25 | 9 |
+| Resolvidas fora do PR #25 | 1 |
 | Total | 21 |
 
 ## Índice geral
@@ -24,7 +25,7 @@ As issues oficiais ficam em https://github.com/manroque/HajimeTech/issues
 | [#9](https://github.com/manroque/HajimeTech/issues/9) | Remover arquivos da versão antiga do front | Tarefa | Frontend | Resolvida no PR #25 | [0009](0009-remover-front-antigo.md) |
 | [#10](https://github.com/manroque/HajimeTech/issues/10) | Navegação por teclado nas abas e seletores de opção | Acessibilidade | Frontend | Aberta | [0010](0010-navegacao-teclado.md) |
 | [#11](https://github.com/manroque/HajimeTech/issues/11) | Padrão de issues e dicionário em docs/issues | Documentação | Documentação | Resolvida no PR #25 | [0011](0011-padrao-dicionario-issues.md) |
-| [#12](https://github.com/manroque/HajimeTech/issues/12) | Front com dois gerenciadores de pacotes (npm e pnpm) | Bug | Frontend | Aberta (aguarda decisão do grupo) | [0012](0012-gerenciador-pacotes.md) |
+| [#12](https://github.com/manroque/HajimeTech/issues/12) | Front com dois gerenciadores de pacotes (npm e pnpm) | Bug | Frontend | Resolvida (decisão: npm) | [0012](0012-gerenciador-pacotes.md) |
 | [#13](https://github.com/manroque/HajimeTech/issues/13) | Rotas de usuários, troca de senha e critérios de avaliação | Tarefa | Backend | Aberta | [0013](0013-rotas-usuarios-senha-criterios.md) |
 | [#14](https://github.com/manroque/HajimeTech/issues/14) | Testes automatizados do front | Tarefa | Frontend | Aberta | [0014](0014-testes-front.md) |
 | [#15](https://github.com/manroque/HajimeTech/issues/15) | Cadastro, edição e desativação de escolas | Tarefa | Backend | Aberta | [0015](0015-cadastro-escolas.md) |
@@ -59,7 +60,6 @@ As pendências de #15 a #19 estão marcadas no código com um comentário `PENDE
 | Nº | Tarefa | Depende de |
 |---:|---|---|
 | #10 | Navegação por teclado nas abas e seletores de opção | nada |
-| #12 | Definir um único gerenciador de pacotes | decisão do grupo |
 | #14 | Testes automatizados do front | nada |
 | #20 | Tela de usuários | #13 |
 | #21 | Edição dos critérios de avaliação | #13 |
@@ -75,6 +75,7 @@ As pendências de #15 a #19 estão marcadas no código com um comentário `PENDE
 | #8 | CI a cada pull request |
 | #9 | Remoção do front antigo |
 | #11 | Padrão de issues e este dicionário |
+| #12 | Gerenciador de pacotes único (npm) |
 | #23 | Como o front foi pensado |
 | #24 | Desenho da arquitetura |
 | #26 | Front convertido para JavaScript |

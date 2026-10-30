@@ -6,7 +6,7 @@
 | Tipo | Bug |
 | Área | Frontend |
 | Etiquetas | bug, frontend |
-| Situação | Aberta (aguarda decisão do grupo) |
+| Situação | Resolvida (decisão: npm) |
 | Aberta em | 23/10/2026 |
 
 [Voltar ao índice](README.md)
@@ -31,11 +31,15 @@ Hoje o README orienta usar `npm`, e o CI de #8 instala com `npm ci`. O `package-
 3. Se for o **pnpm**: remover `package-lock.json`, adicionar `"packageManager": "pnpm@<versão>"` no `package.json`, trocar os comandos do README (`pnpm install`, `pnpm dev`) e ajustar o CI para usar `pnpm install --frozen-lockfile`.
 4. Fazer o mesmo no `backend`, para o projeto inteiro usar um gerenciador só.
 
+## Decisão
+
+O grupo escolheu o **npm**. Todo o projeto já usava npm (README, CI de #8, `database/migrate.Dockerfile` e o `package-lock.json` do backend), e o `package-lock.json` do front estava em sincronia com o `package.json`. A ação foi remover os arquivos do pnpm do `frontend`.
+
 ## Critérios de aceite
 
-* [ ] Decisão registrada nesta issue
-* [ ] Um único arquivo de lock em `frontend` e em `backend`
-* [ ] README e CI usando o gerenciador escolhido
+* [x] Decisão registrada nesta issue — **npm**
+* [x] Um único arquivo de lock em `frontend` e em `backend` — `package-lock.json` nos dois
+* [x] README e CI usando o gerenciador escolhido — já usavam npm
 
 ## Relacionadas
 

@@ -293,7 +293,6 @@ As tarefas ficam nas [issues do GitHub](https://github.com/manroque/HajimeTech/i
 | Issue | Tarefa |
 |---|---|
 | [#10](https://github.com/manroque/HajimeTech/issues/10) | Navegação por teclado nas abas e seletores de opção |
-| [#12](https://github.com/manroque/HajimeTech/issues/12) | Definir um único gerenciador de pacotes (npm ou pnpm) |
 | [#14](https://github.com/manroque/HajimeTech/issues/14) | Testes automatizados do front |
 | [#20](https://github.com/manroque/HajimeTech/issues/20) | Tela de usuários |
 | [#21](https://github.com/manroque/HajimeTech/issues/21) | Edição dos critérios de avaliação |
