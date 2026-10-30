@@ -13,7 +13,6 @@ Cada pendência tem uma issue com as regras, os arquivos e os critérios de acei
 | Reordenar o currículo | `PATCH .../curriculo/categorias/reordenar`, `PATCH .../curriculo/tecnicas/reordenar` | `src/routes/curriculo.js` |
 | Registrar avaliação | `POST .../avaliacoes` | `src/routes/avaliacoes.js` |
 | Premiações | `POST`, `PUT` e `PATCH .../premiacoes`; `POST` e `DELETE .../premiacoes-aluno` | `src/routes/premiacoes.js` |
-| Usuários e critérios de avaliação | rotas novas (ver a issue) | `src/routes` |
 
 A lista atualizada, com os números das issues, está em [`docs/issues`](../docs/issues/README.md).
 
@@ -61,6 +60,7 @@ backend/src/
     ├── faixas.js          ← /api/faixas
     ├── escolas.js         ← /api/escolas e monta todas as rotas /api/escolas/:escolaId/...
     ├── turmas.js, alunos.js, frequencias.js, graduacoes.js
+    ├── usuarios.js        ← professores e acessos de alunos de uma escola
     ├── curriculo.js       ← categorias, técnicas e a lista geral de técnicas
     ├── avaliacoes.js      ← critérios e avaliações
     ├── premiacoes.js      ← tipos de premiação e premiações concedidas
@@ -142,6 +142,8 @@ POST /api/auth/login
 - Aluno: só `GET`, e apenas de dados com `alunoId` igual ao do token (perfil, frequência, graduações, técnicas, progresso, avaliações, premiações). Nas listagens com `?alunoId=`, o servidor **força** o `alunoId` do token. Pode ler faixas, currículo e critérios (conteúdo da escola). Qualquer escrita → `403`.
 - Edição de currículo (categorias e técnicas): **só `administrador` e `professor`** → senão `403`.
 - Criar/editar/desativar escolas: **só `administrador`** → senão `403`.
+- Usuários: **só `administrador` e `professor`** enxergam a lista. O `administrador` cria professores em **qualquer** escola; o `professor` só cria **acessos de alunos** da própria escola. Um acesso de aluno aponta para um aluno **ativo da mesma escola**.
+- Senhas: sempre guardadas em hash (`bcryptjs`) e **nunca** devolvidas em nenhuma resposta (o mapeador `paraUsuario` não expõe `senha_hash`). A troca de senha confere a senha atual.
 - `GET /api/escolas`: administrador recebe todas; professor/aluno recebem apenas a sua.
 - Mensagem padrão de `403`: `"Você não tem permissão para realizar esta ação."`.
 
@@ -185,6 +187,9 @@ Todas as respostas de erro usam **o mesmo corpo** (é o que `http.js` lê):
 | 12 | Professor de uma turma deve ser professor **da mesma escola**. | Validar no servidor (a FK `turmas.professor_id` não é composta). |
 | 13 | Concessão de premiação lançada por engano pode ser removida. | Único `DELETE` físico previsto (`premiacoes_aluno`). O tipo de premiação continua existindo. |
 | 14 | Dashboard calculado no servidor. | Consultas SQL agregadas; o front só exibe o objeto `Dashboard`. |
+| 15 | Usuários: administrador cria professor em qualquer escola; professor só cria acesso de aluno da própria escola. Acesso de aluno aponta para aluno ativo da mesma escola. | Validar no servidor; `escola_id` vem da rota e a senha é guardada em hash com `bcryptjs`. |
+| 16 | Senha nunca devolvida; troca de senha confere a senha atual. | `paraUsuario` não expõe `senha_hash`; `POST /api/auth/trocar-senha` compara com `bcrypt.compare` antes de atualizar. |
+| 17 | Critérios de avaliação: novo entra no fim; reordenar renumera `ordem` como 1, 2, 3...; desativar/reativar nunca apaga. | Mesma mecânica da regra 6, sobre `criterios_avaliacao` da escola. |
 
 ---
 
@@ -198,20 +203,20 @@ Convenções:
 - Respostas de criação: `201` com o objeto criado. Respostas sem conteúdo útil: `204`.
 - Tipos citados (`Aluno`, `Turma`...) estão em `frontend/src/types/index.js`; os corpos de entrada estão descritos nos comentários de cada função dos services.
 
-### Resumo (47 endpoints)
+### Resumo (55 endpoints)
 
 | Domínio | Qtde |
 |---|---:|
-| Autenticação | 1 |
+| Autenticação | 2 |
 | Faixas | 1 |
-| Escolas e professores | 6 |
+| Escolas, professores e usuários | 9 |
 | Turmas | 4 |
 | Alunos | 6 |
 | Frequência | 3 |
 | Graduações | 2 |
 | Currículo | 10 |
 | Acompanhamento técnico | 3 |
-| Avaliações | 3 |
+| Avaliações | 7 |
 | Premiações | 7 |
 | Dashboard | 1 |
 
@@ -220,8 +225,15 @@ Convenções:
 | Método | Rota | Descrição | Perfis | Service |
 |---|---|---|---|---|
 | POST | `/api/auth/login` | Login por email e senha → `{ token, usuario }` | público | `authService.entrar` |
+| POST | `/api/auth/trocar-senha` | Troca a senha do usuário do token; confere `senhaAtual` → `204` | A, P, Al | `authService.trocarSenha` |
 
 Exemplo na [seção 4](#login). `authService.listarUsuariosDemo` **não tem endpoint** (só existe no protótipo).
+
+`POST /api/auth/trocar-senha`:
+
+```json
+{ "senhaAtual": "********", "novaSenha": "********" }
+```
 
 ### 7.2 Faixas (`faixasService`)
 
@@ -236,7 +248,7 @@ Exemplo na [seção 4](#login). `authService.listarUsuariosDemo` **não tem endp
 ]
 ```
 
-### 7.3 Escolas e professores (`escolasService`, `usuariosService`)
+### 7.3 Escolas, professores e usuários (`escolasService`, `usuariosService`)
 
 | Método | Rota | Descrição | Perfis | Service |
 |---|---|---|---|---|
@@ -246,6 +258,9 @@ Exemplo na [seção 4](#login). `authService.listarUsuariosDemo` **não tem endp
 | PUT | `/api/escolas/:id` | Atualiza dados da escola → `Escola` | A | `escolasService.atualizar` |
 | PATCH | `/api/escolas/:id/ativo` | Desativa/reativa (lógico) → `Escola` | A | `escolasService.definirAtivo` |
 | GET | `/api/escolas/:escolaId/professores` | Professores ativos da escola → `Usuario[]` | A, P | `usuariosService.listarProfessores` |
+| GET | `/api/escolas/:escolaId/usuarios?incluirInativas=false` | Professores e acessos de alunos da escola → `Usuario[]` | A, P | `usuariosService.listar` |
+| POST | `/api/escolas/:escolaId/usuarios` | Cria professor (admin) ou acesso de aluno → `Usuario` | A, P | `usuariosService.criar` |
+| PATCH | `/api/escolas/:escolaId/usuarios/:id/ativo` | Desativa/reativa o acesso → `Usuario` | A, P | `usuariosService.definirAtivo` |
 
 > Registre `/api/escolas/resumo` **antes** de rotas `/api/escolas/:id` para não ser capturada como id.
 
@@ -271,6 +286,21 @@ Exemplo na [seção 4](#login). `authService.listarUsuariosDemo` **não tem endp
   "00000001-0000-4000-8000-000000000002": { "alunos": 11, "turmas": 2 }
 }
 ```
+
+`POST /api/escolas/:escolaId/usuarios` (`UsuarioInput`):
+
+```json
+{
+  "nome": "Sensei Ana Paula Ribeiro",
+  "email": "ana@hajime.local",
+  "perfil": "professor",
+  "senha": "********"
+}
+```
+
+Para um acesso de aluno, informe `perfil: "aluno"` e o `alunoId` (ativo, da mesma escola). `perfil` só pode ser `professor` ou `aluno`; a senha é guardada em hash e nunca é devolvida.
+
+`PATCH .../usuarios/:id/ativo`: `{ "ativo": false }`
 
 ### 7.4 Turmas (`turmasService`)
 
@@ -452,8 +482,22 @@ Resposta: `Graduacao` com `faixaAnteriorId` preenchida pelo servidor.
 | Método | Rota | Descrição | Perfis | Service |
 |---|---|---|---|---|
 | GET | `/api/escolas/:escolaId/criterios-avaliacao` | Critérios ativos por `ordem` → `CriterioAvaliacao[]` | A, P, Al | `avaliacoesService.listarCriterios` |
+| POST | `/api/escolas/:escolaId/criterios-avaliacao` | Cria critério (entra no fim) → `CriterioAvaliacao` | A, P | `avaliacoesService.criarCriterio` |
+| PUT | `/api/escolas/:escolaId/criterios-avaliacao/:id` | Edita nome e descrição → `CriterioAvaliacao` | A, P | `avaliacoesService.atualizarCriterio` |
+| PATCH | `/api/escolas/:escolaId/criterios-avaliacao/:id/ativo` | Desativa/reativa (nunca apaga) → `CriterioAvaliacao` | A, P | `avaliacoesService.definirCriterioAtivo` |
+| PATCH | `/api/escolas/:escolaId/criterios-avaliacao/reordenar` | Reordena critérios ativos → `204` | A, P | `avaliacoesService.reordenarCriterios` |
 | GET | `/api/escolas/:escolaId/avaliacoes?alunoId=` | Avaliações com `notas`, **data crescente** (para o gráfico) → `Avaliacao[]` | A, P, Al | `avaliacoesService.listar` |
 | POST | `/api/escolas/:escolaId/avaliacoes` | Registra avaliação + notas (transação); `avaliadorId` = usuário do token → `Avaliacao` | A, P | `avaliacoesService.criar` |
+
+`POST` / `PUT .../criterios-avaliacao` (`CriterioAvaliacaoInput`):
+
+```json
+{ "nome": "Técnica", "descricao": "Execução correta dos movimentos da faixa." }
+```
+
+`PATCH .../criterios-avaliacao/:id/ativo`: `{ "ativo": false }`
+
+`PATCH .../criterios-avaliacao/reordenar` (`{ ids }`): lista com **exatamente** os critérios ativos da escola, na nova ordem; o servidor renumera `ordem` como 1, 2, 3...
 
 `POST` (`AvaliacaoInput`):
 

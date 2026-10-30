@@ -8,6 +8,8 @@
  * Sem TEST_DATABASE_URL os testes são pulados. Eles alteram dados (criam alunos,
  * graduações etc.), então use um banco de desenvolvimento ou de teste.
  */
+import { randomUUID } from 'node:crypto';
+
 import request from 'supertest';
 
 const URL_BANCO = process.env.TEST_DATABASE_URL;
@@ -246,6 +248,209 @@ descrever('API com banco de verdade', () => {
       expect(r.body.presencas.atual).toBeGreaterThan(0);
       expect(r.body.evolucaoFrequencia.length).toBeGreaterThan(0);
       expect(r.body.maisAssiduos.length).toBeLessThanOrEqual(5);
+    });
+  });
+
+  describe('usuários', () => {
+    test('administrador cria professor em qualquer escola, sem devolver a senha', async () => {
+      const email = `prof-${randomUUID()}@teste.local`;
+      const r = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('admin'))
+        .send({ nome: 'Professor Teste', email, perfil: 'professor', senha: 'senha123' });
+
+      expect(r.statusCode).toBe(201);
+      expect(r.body.perfil).toBe('professor');
+      expect(r.body.email).toBe(email);
+      expect(r.body.senha).toBeUndefined();
+      expect(r.body.senhaHash).toBeUndefined();
+
+      const login = await request(app).post('/api/auth/login').send({ email, senha: 'senha123' });
+      expect(login.statusCode).toBe(200);
+      expect(login.body.usuario.perfil).toBe('professor');
+    });
+
+    test('administrador cria professor em outra escola', async () => {
+      const email = `prof-${randomUUID()}@teste.local`;
+      const r = await request(app)
+        .post(`/api/escolas/${KIZUNA}/usuarios`)
+        .set(como('admin'))
+        .send({ nome: 'Professor Kizuna', email, perfil: 'professor', senha: 'senha123' });
+
+      expect(r.statusCode).toBe(201);
+      expect(r.body.escolaId).toBe(KIZUNA);
+    });
+
+    test('professor cria acesso de aluno da própria escola', async () => {
+      const email = `aluno-${randomUUID()}@teste.local`;
+      const r = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('professor'))
+        .send({ nome: 'Acesso da Sofia', email, perfil: 'aluno', alunoId: ALUNO_SOFIA, senha: 'senha123' });
+
+      expect(r.statusCode).toBe(201);
+      expect(r.body.perfil).toBe('aluno');
+      expect(r.body.alunoId).toBe(ALUNO_SOFIA);
+      expect(r.body.senha).toBeUndefined();
+
+      const login = await request(app).post('/api/auth/login').send({ email, senha: 'senha123' });
+      expect(login.statusCode).toBe(200);
+      expect(login.body.usuario.alunoId).toBe(ALUNO_SOFIA);
+    });
+
+    test('professor não cria professor → 403', async () => {
+      const email = `prof-${randomUUID()}@teste.local`;
+      const r = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('professor'))
+        .send({ nome: 'X', email, perfil: 'professor', senha: 'senha123' });
+
+      expect(r.statusCode).toBe(403);
+    });
+
+    test('acesso de aluno exige aluno ativo da mesma escola → 400', async () => {
+      const yuki = '00000005-0000-4000-8000-000000000024';
+      const email = `aluno-${randomUUID()}@teste.local`;
+      const r = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('professor'))
+        .send({ nome: 'X', email, perfil: 'aluno', alunoId: yuki, senha: 'senha123' });
+
+      expect(r.statusCode).toBe(400);
+    });
+
+    test('email repetido → 409', async () => {
+      const email = `dup-${randomUUID()}@teste.local`;
+      await request(app).post(`${h}/usuarios`).set(como('admin')).send({ nome: 'A', email, perfil: 'professor', senha: 'senha123' });
+      const r = await request(app).post(`${h}/usuarios`).set(como('admin')).send({ nome: 'B', email, perfil: 'professor', senha: 'senha123' });
+
+      expect(r.statusCode).toBe(409);
+    });
+
+    test('lista usuários e desativa/reativa acesso', async () => {
+      const email = `ativo-${randomUUID()}@teste.local`;
+      const criado = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('professor'))
+        .send({ nome: 'Acesso Teste', email, perfil: 'aluno', alunoId: ALUNO_SOFIA, senha: 'senha123' });
+      expect(criado.statusCode).toBe(201);
+
+      const desativado = await request(app)
+        .patch(`${h}/usuarios/${criado.body.id}/ativo`)
+        .set(como('professor'))
+        .send({ ativo: false });
+      expect(desativado.body.ativo).toBe(false);
+
+      const ativos = await request(app).get(`${h}/usuarios`).set(como('professor'));
+      expect(ativos.body.some((u) => u.id === criado.body.id)).toBe(false);
+
+      const todos = await request(app).get(`${h}/usuarios?incluirInativas=true`).set(como('professor'));
+      expect(todos.body.some((u) => u.id === criado.body.id)).toBe(true);
+      expect(todos.body.every((u) => u.senhaHash === undefined)).toBe(true);
+
+      const loginInativo = await request(app).post('/api/auth/login').send({ email, senha: 'senha123' });
+      expect(loginInativo.statusCode).toBe(401);
+
+      const reativado = await request(app)
+        .patch(`${h}/usuarios/${criado.body.id}/ativo`)
+        .set(como('professor'))
+        .send({ ativo: true });
+      expect(reativado.body.ativo).toBe(true);
+    });
+  });
+
+  describe('trocar senha', () => {
+    test('senha atual incorreta → 400', async () => {
+      const r = await request(app)
+        .post('/api/auth/trocar-senha')
+        .set(como('professor'))
+        .send({ senhaAtual: 'errada', novaSenha: 'nova123' });
+
+      expect(r.statusCode).toBe(400);
+    });
+
+    test('troca a senha e passa a entrar com a nova', async () => {
+      const email = `troca-${randomUUID()}@teste.local`;
+      const criado = await request(app)
+        .post(`${h}/usuarios`)
+        .set(como('admin'))
+        .send({ nome: 'Troca de Senha', email, perfil: 'professor', senha: 'senha123' });
+      expect(criado.statusCode).toBe(201);
+
+      const login = await request(app).post('/api/auth/login').send({ email, senha: 'senha123' });
+      const header = { Authorization: `Bearer ${login.body.token}` };
+
+      const r = await request(app)
+        .post('/api/auth/trocar-senha')
+        .set(header)
+        .send({ senhaAtual: 'senha123', novaSenha: 'nova123' });
+      expect(r.statusCode).toBe(204);
+
+      const antiga = await request(app).post('/api/auth/login').send({ email, senha: 'senha123' });
+      expect(antiga.statusCode).toBe(401);
+
+      const nova = await request(app).post('/api/auth/login').send({ email, senha: 'nova123' });
+      expect(nova.statusCode).toBe(200);
+    });
+  });
+
+  describe('critérios de avaliação', () => {
+    test('cria, edita, desativa e reativa', async () => {
+      const criado = await request(app)
+        .post(`${h}/criterios-avaliacao`)
+        .set(como('professor'))
+        .send({ nome: 'Postura', descricao: 'Postura no tatame.' });
+      expect(criado.statusCode).toBe(201);
+
+      const editado = await request(app)
+        .put(`${h}/criterios-avaliacao/${criado.body.id}`)
+        .set(como('professor'))
+        .send({ nome: 'Postura e respeito', descricao: '' });
+      expect(editado.body.nome).toBe('Postura e respeito');
+
+      const desativado = await request(app)
+        .patch(`${h}/criterios-avaliacao/${criado.body.id}/ativo`)
+        .set(como('professor'))
+        .send({ ativo: false });
+      expect(desativado.body.ativo).toBe(false);
+
+      const ativos = await request(app).get(`${h}/criterios-avaliacao`).set(como('professor'));
+      expect(ativos.body.some((c) => c.id === criado.body.id)).toBe(false);
+
+      const reativado = await request(app)
+        .patch(`${h}/criterios-avaliacao/${criado.body.id}/ativo`)
+        .set(como('professor'))
+        .send({ ativo: true });
+      expect(reativado.body.ativo).toBe(true);
+    });
+
+    test('reordena os critérios e valida a lista', async () => {
+      const lista = (await request(app).get(`${h}/criterios-avaliacao`).set(como('professor'))).body;
+      const invertidos = [...lista.map((c) => c.id)].reverse();
+
+      const invalida = await request(app)
+        .patch(`${h}/criterios-avaliacao/reordenar`)
+        .set(como('professor'))
+        .send({ ids: lista.slice(1).map((c) => c.id) });
+      expect(invalida.statusCode).toBe(400);
+
+      const r = await request(app)
+        .patch(`${h}/criterios-avaliacao/reordenar`)
+        .set(como('professor'))
+        .send({ ids: invertidos });
+      expect(r.statusCode).toBe(204);
+
+      const depois = (await request(app).get(`${h}/criterios-avaliacao`).set(como('professor'))).body;
+      expect(depois.map((c) => c.id)).toEqual(invertidos);
+    });
+
+    test('aluno não edita critérios → 403', async () => {
+      const r = await request(app)
+        .post(`${h}/criterios-avaliacao`)
+        .set(como('aluno'))
+        .send({ nome: 'X' });
+
+      expect(r.statusCode).toBe(403);
     });
   });
 });

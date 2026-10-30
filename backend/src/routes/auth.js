@@ -109,4 +109,42 @@ router.get('/me', autenticar, async (req, res, next) => {
   }
 });
 
+/*
+ * POST /api/auth/trocar-senha
+ *
+ * Recebe { senhaAtual, novaSenha } e troca a senha do usuário do token,
+ * confirmando antes a senha atual.
+ */
+router.post('/trocar-senha', autenticar, async (req, res, next) => {
+  try {
+    const senhaAtual = typeof req.body?.senhaAtual === 'string' ? req.body.senhaAtual : '';
+    const novaSenha = typeof req.body?.novaSenha === 'string' ? req.body.novaSenha.trim() : '';
+
+    if (!senhaAtual || !novaSenha) {
+      return res.status(400).json({
+        erro: 'Informe a senha atual e a nova senha.'
+      });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT ${COLUNAS_USUARIO} FROM usuarios WHERE id = $1`,
+      [req.usuario.id]
+    );
+
+    const row = rows[0];
+    if (!row?.ativo || !(await bcrypt.compare(senhaAtual, row.senha_hash))) {
+      return res.status(400).json({
+        erro: 'Senha atual incorreta.'
+      });
+    }
+
+    const senhaHash = await bcrypt.hash(novaSenha, 10);
+    await pool.query('UPDATE usuarios SET senha_hash = $1 WHERE id = $2', [senhaHash, req.usuario.id]);
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
